@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>เข้าสู่ระบบ | Code Scan Pro</title>
+    {% load static %}
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap'); /* เพิ่ม Kanit font */
+
+        body {
+            font-family: 'Kanit', sans-serif; /* ใช้ Kanit เป็น Font หลัก */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #2c3e50, #34495e, #1a2a3a); /* Dark blue/grey gradient */
+            margin: 0;
+            color: #f0f0f0; /* Light text for contrast on dark background */
+            overflow-y: auto; 
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        /* --- Home Icon Styles (ปรับปรุงแล้ว) --- */
+        .home-icon-wrapper {
+            position: absolute;
+            top: 2rem; /* ระยะห่างจากด้านบน */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10; /* ให้ icon อยู่เหนือสุด */
+            display: flex;
+            flex-direction: column; /* จัดเรียง icon กับข้อความให้อยู่ในแนวตั้ง */
+            align-items: center;
+            gap: 0.5rem; /* เพิ่มช่องว่างระหว่างรูปภาพกับข้อความเล็กน้อย */
+            text-decoration: none;
+            color: #e0e0e0;
+            transition: transform 0.3s ease, color 0.3s ease, opacity 0.3s ease; /* เพิ่ม opacity ใน transition */
+            text-align: center; /* จัดข้อความให้อยู่กึ่งกลางใต้รูป */
+            opacity: 0.9; /* ลดความโปร่งใสเริ่มต้นเล็กน้อย */
+        }
+        .home-icon-wrapper:hover {
+            transform: translateX(-50%) translateY(-5px); /* ยกขึ้นเล็กน้อยเมื่อ hover */
+            color: #00c6ff; /* เปลี่ยนสีข้อความเมื่อ hover */
+            opacity: 1; /* ทำให้ทึบขึ้นเมื่อ hover */
+        }
+
+        .home-icon-wrapper img {
+            width: 80px; /* **ปรับขนาดรูปภาพให้ใหญ่ขึ้น** */
+            height: auto; /* รักษาอัตราส่วนของรูปภาพ */
+            border-radius: 15px; /* ทำให้มุมมนขึ้นอีกเล็กน้อย */
+            box-shadow: 0 0 20px rgba(0, 198, 255, 0.6); /* เปลี่ยนเงาเป็นสีฟ้าอ่อน */
+            transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease; /* เพิ่ม filter ใน transition */
+            filter: brightness(100%); /* เริ่มต้นความสว่างปกติ */
+        }
+
+        .home-icon-wrapper:hover img {
+            transform: scale(1.1); /* ขยายรูปภาพเมื่อ hover */
+            box-shadow: 0 0 30px rgba(0, 198, 255, 0.8); /* ทำให้เงาเข้มขึ้นและสว่างขึ้นเมื่อ hover */
+            filter: brightness(120%); /* เพิ่มความสว่างเมื่อ hover */
+        }
+
+        .home-icon-wrapper span {
+            font-size: 1.2rem; /* ปรับขนาดข้อความให้เหมาะสมกับรูปภาพ */
+            font-weight: 600;
+            white-space: nowrap; /* ป้องกันข้อความขึ้นบรรทัดใหม่ */
+            color: #8aff8a; /* สีเขียวอ่อน */
+            text-shadow: 0 0 8px rgba(138, 255, 138, 0.6); /* เงาข้อความสีเขียวอ่อน */
+        }
+
+        /* --- Login Container Styles --- */
+        .login-container {
+            background-color: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 3.5rem 3rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 0 8px rgba(255, 255, 255, 0.08);
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            transition: box-shadow 0.3s ease;
+            margin-top: 5.5rem; /* เพิ่ม margin บน เพื่อให้มีที่ว่างสำหรับรูปภาพด้านบน */
+            margin-bottom: 2rem;
+        }
+
+        .login-container:hover {
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5), inset 0 0 12px rgba(255, 255, 255, 0.12);
+        }
+
+        .login-container h2 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #00c6ff, #007bff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+            margin-bottom: 2rem;
+            text-shadow: none; 
+            letter-spacing: 0.5px;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.6rem;
+            font-weight: 600;
+            color: #c0c0c0;
+            font-size: 1.05rem;
+            transition: color 0.3s ease;
+        }
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 14px 18px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            font-size: 1.05rem;
+            background-color: rgba(0, 0, 0, 0.2);
+            color: #e0e0e0;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.3);
+        }
+        input::placeholder {
+            color: #aaa;
+            opacity: 0.7;
+        }
+        input:focus {
+            border-color: #00c6ff;
+            box-shadow: 0 0 0 4px rgba(0, 198, 255, 0.2), inset 0 1px 5px rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.3);
+            outline: none;
+        }
+        input:focus + label {
+            color: #00c6ff;
+        }
+
+        button {
+            background: linear-gradient(45deg, #007bff, #00c6ff); 
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            width: 100%;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+        }
+        button:hover {
+            background: linear-gradient(45deg, #00c6ff, #007bff);
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(0, 123, 255, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 10px rgba(0, 123, 255, 0.2);
+        }
+
+        .errorlist {
+            color: #ff8a80;
+            background: rgba(255, 82, 82, 0.1);
+            border-left: 4px solid #ff5252;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+            list-style: none;
+            padding-left: 15px;
+            margin-left: 0;
+            text-align: left;
+            box-shadow: 0 2px 10px rgba(255, 82, 82, 0.15);
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .messages {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .messages li {
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+            text-align: left;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+            list-style: none;
+            margin-left: 0;
+        }
+        .messages li.success {
+            background: rgba(76, 175, 80, 0.1);
+            color: #8aff8a;
+            border-left: 4px solid #4CAF50;
+            box-shadow: 0 2px 10px rgba(76, 175, 80, 0.25);
+        }
+        .messages li.error {
+            background: rgba(255, 82, 82, 0.1);
+            color: #ff8a80;
+            border-left: 4px solid #ff5252;
+            box-shadow: 0 2px 10px rgba(255, 82, 82, 0.15);
+        }
+
+        .register-link {
+            margin-top: 2.2rem;
+            font-size: 1rem;
+            color: #ccc;
+        }
+        .register-link a {
+            color: #00c6ff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+        }
+        .register-link a:hover {
+            text-decoration: underline;
+            color: #8aff8a;
+            text-shadow: 0 0 5px rgba(138, 255, 138, 0.4);
+        }
+
+        /* Media Queries for Responsiveness */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 2.5rem 1.8rem;
+                border-radius: 1.2rem;
+                margin-top: 4.5rem; /* ปรับ margin บนลงเล็กน้อยสำหรับมือถือ */
+            }
+            .login-container h2 {
+                font-size: 1.8rem;
+                margin-bottom: 1.5rem;
+            }
+            input[type="text"],
+            input[type="password"] {
+                padding: 12px 15px;
+                font-size: 1rem;
+            }
+            button {
+                padding: 13px;
+                font-size: 1.05rem;
+            }
+            .errorlist, .messages li {
+                padding: 10px 12px;
+                font-size: 0.9rem;
+            }
+            .register-link {
+                margin-top: 1.5rem;
+                font-size: 0.9rem;
+            }
+            .home-icon-wrapper {
+                top: 1.5rem; /* ปรับตำแหน่ง icon สำหรับมือถือ */
+            }
+            .home-icon-wrapper img {
+                width: 60px; /* ปรับขนาดรูปภาพสำหรับมือถือ */
+            }
+            .home-icon-wrapper span {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="{% url 'scp4:home' %}" class="home-icon-wrapper">
+        <img src="{% static 'scp4/images/com.png' %}" alt="Home" />
+        <span></span>
+    </a>
+
+    <div class="login-container">
+        <h2>🔐 เข้าสู่ระบบ</h2>
+
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <ul class="errorlist">
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}">👤 ชื่อผู้ใช้</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.username.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}">🔑 รหัสผ่าน</label>
+                {{ form.password }}
+                {% if form.password.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.password.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                        </ul>
+                {% endif %}
+            </div>
+
+            <button type="submit">เข้าสู่ระบบ</button>
+        </form>
+
+        <p class="register-link">
+            ยังไม่มีบัญชี? <a href="{% url 'scp4:signup' %}">สมัครสมาชิก</a>
+        </p>
+
+    </div>
+</body>
+</html>

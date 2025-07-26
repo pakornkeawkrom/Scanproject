@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Code Review Report - Scan ID: {{ scan_result.id }}</title>
+    <style>
+        /* Base Styles */
+        body { 
+            font-family: 'TH Sarabun New', Arial, sans-serif; /* Recommended Thai font for print */
+            margin: 20mm; 
+            font-size: 11pt;
+            color: #333;
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4 { 
+            color: #2c3e50; /* Darker blue-grey for professionalism */
+            margin-bottom: 5mm; 
+        }
+        h1 { 
+            font-size: 24pt; 
+            text-align: center; 
+            margin-bottom: 10mm;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 5mm;
+        }
+        h2 { 
+            font-size: 18pt; 
+            border-bottom: 1px solid #c0c0c0; 
+            padding-bottom: 3mm; 
+            margin-top: 15mm;
+            color: #34495e; /* Slightly lighter heading color */
+        }
+        h3 { 
+            font-size: 14pt; 
+            color: #16a085; /* Teal for sub-headings */
+            margin-top: 10mm; 
+        }
+        h4 { 
+            font-size: 13pt; 
+            color: #27ae60; /* Green for vulnerability titles */
+            margin-top: 8mm; 
+        }
+
+        /* Paragraphs and Text */
+        p {
+            margin-bottom: 2mm;
+        }
+        strong {
+            font-weight: bold;
+        }
+
+        /* Preformatted Text (Code Blocks) */
+        pre { 
+            background-color: #f8f8f8; 
+            border: 1px solid #e0e0e0; 
+            padding: 8mm; 
+            white-space: pre-wrap; 
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+            font-size: 10pt;
+            overflow-x: auto;
+            margin-bottom: 10mm;
+            line-height: 1.4;
+        }
+
+        /* Vulnerability Items */
+        .vulnerability-item {
+            border: 1px solid #dcdcdc; /* Light grey border */
+            background-color: #ffffff; /* White background */
+            padding: 12mm;
+            margin-bottom: 10mm;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+        }
+        .vulnerability-item.safe {
+            border-color: #4CAF50; /* Green border for safe */
+            background-color: #e8f5e9; /* Light green background */
+        }
+        .vulnerability-item.no-vulnerability { /* For when AI found no specific vulns but provided raw output */
+            border-color: #5bc0de; /* Info blue */
+            background-color: #effaff;
+        }
+
+        /* Vulnerability Item Headings */
+        .vulnerability-item h4 {
+            margin-top: 0;
+            margin-bottom: 5mm;
+            display: flex;
+            align-items: center;
+            gap: 8px; /* Space between title and badge */
+        }
+
+        /* Severity Badges */
+        .severity-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 9pt;
+            font-weight: bold;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        /* Specific colors for severity levels */
+        .severity-badge.critical { background-color: #c0392b; } /* Darker Red */
+        .severity-badge.high { background-color: #e67e22; }    /* Dark Orange */
+        .severity-badge.medium { background-color: #f1c40f; }  /* Yellow */
+        .severity-badge.low { background-color: #3498db; }     /* Blue */
+        .severity-badge.info { background-color: #7f8c8d; }    /* Grey */
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            font-size: 9pt;
+            color: #777;
+            margin-top: 20mm;
+            border-top: 1px solid #eee;
+            padding-top: 5mm;
+        }
+
+        /* Page Breaks (for multi-page PDFs) */
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+    <h1>รายงานผลการวิเคราะห์โค้ดโดย AI</h1>
+
+    <p style="text-align: center;">
+        <strong>โครงการ:</strong> {{ scan_result.project.name }}<br>
+        <strong>สแกนโดย:</strong> {{ scan_result.project.owner.username }}<br>
+        <strong>วันที่และเวลาสแกน:</strong> {{ scan_result.scanned_at|date:"d M Y H:i:s" }}<br>
+        <strong>วันที่ออกรายงาน:</strong> {{ current_date|date:"d M Y H:i:s" }}
+    </p>
+
+    <br>
+
+    <h2>ภาพรวมผลการวิเคราะห์</h2>
+    {% if no_vuln_found %}
+        <div class="vulnerability-item safe">
+            <h3>✅ ปลอดภัย!</h3>
+            <p>AI ไม่พบช่องโหว่หรือความเสี่ยงด้านความปลอดภัยที่สำคัญในโค้ดนี้</p>
+            <p style="font-size: 9pt; color: #666;">
+                <em>หมายเหตุ: การวิเคราะห์นี้ดำเนินการโดย AI และไม่สามารถรับประกันความปลอดภัยได้ 100% โปรดตรวจสอบโค้ดด้วยตนเองอีกครั้งเพื่อความมั่นใจสูงสุด.</em>
+            </p>
+        </div>
+    {% elif ollama_error %}
+        <div class="vulnerability-item no-vulnerability" style="border-color: #dc3545; background-color: #ffe0e0;">
+            <h3>⚠️ เกิดข้อผิดพลาดในการวิเคราะห์!</h3>
+            <p>AI ไม่สามารถวิเคราะห์โค้ดได้สมบูรณ์ เนื่องจากเกิดข้อผิดพลาดภายในระบบ:</p>
+            <pre>{{ ollama_error }}</pre>
+            <p style="font-size: 9pt; color: #666;"><em>กรุณาลองใหม่อีกครั้ง หรือตรวจสอบปัญหาที่เกี่ยวข้องกับการตั้งค่า AI.</em></p>
+        </div>
+    {% else %}
+         <p>AI ได้ทำการวิเคราะห์โค้ดและพบช่องโหว่ดังต่อไปนี้:</p>
+        <ul style="list-style: none; padding: 0;">
+            {% for vuln in scan_result.vulnerabilities.all %}
+                <div class="vulnerability-item">
+                    <h4>
+                        {# แก้ไขตรงนี้: เปลี่ยน first_upper เป็น capfirst #}
+                        {{ vuln.severity|capfirst }} 
+                        <span class="severity-badge {{ vuln.severity|lower }}">{{ vuln.severity }}</span>
+                    </h4>
+                    <p><strong>ประเภท:</strong> {{ vuln.description|truncatechars:100 }}</p>
+                    <p><strong>คำอธิบาย:</strong> {{ vuln.description }}</p>
+                    <p><strong>วิธีแก้ไข:</strong> {{ vuln.remediation }}</p>
+                    {% if vuln.code_snippet %}
+                        <p><strong>โค้ดที่เกี่ยวข้อง:</strong></p>
+                        <pre>{{ vuln.code_snippet }}</pre>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <div class="page-break"></div> {# Ensure code is on a new page if vulns are extensive #}
+
+    <h2>โค้ดที่ส่งวิเคราะห์</h2>
+    <pre>{{ code }}</pre>
+
+    {% if raw_output_text %}
+        <div class="page-break"></div>
+        <h2>ผลลัพธ์ดิบจาก AI (เพื่อการอ้างอิง)</h2>
+        <pre>{{ raw_output_text }}</pre>
+    {% endif %}
+
+    <div class="footer">
+        <p>รายงานนี้จัดทำโดย AI Code Reviewer Application</p>
+        <p>Scan ID: {{ scan_result.id }}</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>สมัครสมาชิก | Code Scan Pro</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap');
+
+        body {
+            font-family: 'Kanit', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            /* พื้นหลังไล่ระดับสีคงที่ */
+            background: linear-gradient(135deg, #2c3e50, #34495e, #1a2a3a);
+            margin: 0;
+            color: #f0f0f0;
+            /* อนุญาตให้มีการเลื่อนขึ้นลงเมื่อเนื้อหาเกิน */
+            overflow-y: auto;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        /* ลบ animated background elements (body::before, body::after) ออกไปเพื่อประสิทธิภาพ */
+
+        .signup-container {
+            /* แทนที่ backdrop-filter ด้วย background-color แบบโปร่งใส */
+            background-color: rgba(255, 255, 255, 0.12); /* Semi-transparent white */
+            /* ไม่ใช้ backdrop-filter แล้ว */
+            /* backdrop-filter: blur(10px); */ 
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 3.5rem;
+            border-radius: 1.5rem;
+            /* ปรับ shadow ให้ยังคงมีมิติ แต่ไม่ซับซ้อนเกินไป */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 0 8px rgba(255, 255, 255, 0.08);
+            max-width: 900px;
+            width: 95%;
+            position: relative;
+            z-index: 1;
+            /* ลด transition หรือนำออก (ถ้าต้องการประสิทธิภาพสูงสุด) */
+            /* transform: translateY(0); */ /* ไม่มีการยกขึ้นเองแล้ว */
+            transition: box-shadow 0.3s ease; /* เหลือแค่ transition ของ shadow */
+
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2.5rem;
+            text-align: center;
+        }
+
+        .signup-container:hover {
+            /* ปรับ shadow ให้เด่นขึ้นเล็กน้อยตอน hover */
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5), inset 0 0 12px rgba(255, 255, 255, 0.12);
+            /* ไม่มี transform: translateY(-5px); แล้วเพื่อความนิ่ง */
+        }
+
+        /* --- Info Section Styles --- */
+        .signup-info {
+            text-align: left;
+            padding-right: 1.5rem;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            /* ลดหรือนำ text-shadow ที่กินทรัพยากรออกไป */
+            text-shadow: none; 
+            /* text-shadow: 0 0 5px rgba(0, 198, 255, 0.1); */ /* ถ้ายังอยากได้เล็กน้อย */
+        }
+
+        .signup-info h2 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #00e6ff, #009bff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+            /* ลดหรือนำ text-shadow ที่กินทรัพยากรออกไป */
+            text-shadow: none;
+            /* text-shadow: 0 0 10px rgba(0, 198, 255, 0.3); */ /* ถ้ายังอยากได้เล็กน้อย */
+            letter-spacing: 1px;
+            line-height: 1.2;
+        }
+
+        .signup-info p {
+            font-size: 1.15rem;
+            line-height: 1.7;
+            color: #d0d0d0;
+            margin-bottom: 1.5rem;
+        }
+
+        .signup-info ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            text-align: left;
+        }
+
+        .signup-info ul li {
+            font-size: 1rem;
+            color: #b0b0b0;
+            margin-bottom: 0.8rem;
+            position: relative;
+            padding-left: 25px;
+        }
+
+        .signup-info ul li::before {
+            content: '✅';
+            position: absolute;
+            left: 0;
+            color: #4CAF50;
+            font-size: 1.1em;
+            top: 0;
+        }
+        /* --- End Info Section Styles --- */
+
+
+        /* --- Form Section Styles --- */
+        .signup-form {
+            text-align: center;
+            padding-left: 1.5rem;
+        }
+        
+        .signup-form h2 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #00c6ff, #007bff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+            margin-bottom: 2rem;
+            /* ลดหรือนำ text-shadow ที่กินทรัพยากรออกไป */
+            text-shadow: none;
+            /* text-shadow: 0 0 10px rgba(0, 198, 255, 0.2); */ /* ถ้ายังอยากได้เล็กน้อย */
+            letter-spacing: 0.5px;
+            padding-left: 0;
+            border-right: none;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.6rem;
+            font-weight: 600;
+            color: #c0c0c0;
+            font-size: 1.05rem;
+            transition: color 0.3s ease;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 14px 18px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            font-size: 1.05rem;
+            background-color: rgba(0, 0, 0, 0.2);
+            color: #e0e0e0;
+            transition: all 0.3s ease; /* คง transition ไว้เพื่อความสวยงามตอน focus */
+            box-sizing: border-box;
+            box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.3);
+            /* ลบ will-change ออกไปเพื่อความนิ่งและลดการ trigger layer ใหม่บ่อยๆ */
+        }
+        input::placeholder {
+            color: #aaa;
+            opacity: 0.7;
+        }
+        input:focus {
+            border-color: #00c6ff;
+            box-shadow: 0 0 0 4px rgba(0, 198, 255, 0.2), inset 0 1px 5px rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.3);
+            outline: none;
+        }
+        input:focus + label {
+            color: #00c6ff;
+        }
+
+        button {
+            background: linear-gradient(45deg, #007bff, #00c6ff); 
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            width: 100%;
+            transition: all 0.3s ease; /* คง transition ไว้เพื่อความสวยงามตอน hover/active */
+            margin-top: 15px;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            /* ปรับ shadow ให้ยังคงมีมิติ */
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+            /* ลบ will-change ออกไป */
+        }
+        button:hover {
+            background: linear-gradient(45deg, #00c6ff, #007bff);
+            transform: translateY(-2px); /* ลดการยกขึ้นเล็กน้อย */
+            box-shadow: 0 7px 20px rgba(0, 123, 255, 0.4); /* ลดความเข้มของ shadow */
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 10px rgba(0, 123, 255, 0.2);
+        }
+
+        .errorlist {
+            color: #ff8a80;
+            background: rgba(255, 82, 82, 0.1);
+            border-left: 4px solid #ff5252;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+            list-style: none;
+            padding-left: 15px;
+            margin-left: 0;
+            text-align: left;
+            box-shadow: 0 2px 10px rgba(255, 82, 82, 0.15);
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+        .messages {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .messages li {
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+            text-align: left;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+            list-style: none;
+            margin-left: 0;
+        }
+        .messages li.success {
+            background: rgba(76, 175, 80, 0.1);
+            color: #8aff8a;
+            border-left: 4px solid #4CAF50;
+            box-shadow: 0 2px 10px rgba(76, 175, 80, 0.25);
+        }
+        .messages li.error {
+            background: rgba(255, 82, 82, 0.1);
+            color: #ff8a80;
+            border-left: 4px solid #ff5252;
+            box-shadow: 0 2px 10px rgba(255, 82, 82, 0.15);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-link {
+            margin-top: 2.2rem;
+            font-size: 1rem;
+            color: #ccc;
+            grid-column: 1 / -1;
+            text-align: center;
+        }
+        .login-link a {
+            color: #00c6ff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+        }
+        .login-link a:hover {
+            text-decoration: underline;
+            color: #8aff8a;
+            text-shadow: 0 0 5px rgba(138, 255, 138, 0.4);
+        }
+
+        @media (min-width: 768px) {
+            .signup-container {
+                grid-template-columns: 1.2fr 1fr;
+                text-align: left;
+            }
+            .signup-info h2 {
+                text-align: left;
+            }
+            .signup-form {
+                text-align: left;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .signup-container {
+                padding: 2.5rem 1.8rem;
+                border-radius: 1.2rem;
+                gap: 2rem;
+            }
+            .signup-info {
+                padding-right: 0;
+                border-right: none;
+            }
+            .signup-info h2 {
+                font-size: 2.2rem;
+                text-align: center;
+                margin-bottom: 1rem;
+            }
+            .signup-info p {
+                font-size: 1rem;
+                text-align: center;
+                margin-bottom: 1rem;
+            }
+            .signup-info ul {
+                text-align: center;
+                padding-left: 0;
+            }
+            .signup-info ul li {
+                display: inline-block;
+                text-align: left;
+                margin: 0.5rem 10px;
+                padding-left: 25px;
+            }
+            .signup-form {
+                padding-left: 0;
+            }
+            .signup-form h2 {
+                font-size: 1.8rem;
+                margin-bottom: 1.5rem;
+            }
+            input[type="text"],
+            input[type="email"],
+            input[type="password"] {
+                padding: 12px 15px;
+                font-size: 1rem;
+            }
+            button {
+                padding: 13px;
+                font-size: 1.05rem;
+            }
+            .errorlist, .messages li {
+                padding: 10px 12px;
+                font-size: 0.9rem;
+            }
+            .login-link {
+                margin-top: 1.5rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="signup-container">
+        <div class="signup-info">
+            <h2>ยกระดับงานของคุณด้วย Code Scan Pro</h2>
+            <p>
+                สมัครสมาชิกฟรี! เพื่อเข้าใช้งานระบบวิเคราะห์โค้ดอัตโนมัติของเรา
+                ที่จะช่วยให้คุณตรวจสอบความปลอดภัย, ปรับปรุงคุณภาพโค้ด และเพิ่มประสิทธิภาพการทำงานได้ง่ายๆ
+            </p>
+            <ul>
+                <li>รันการสแกนความปลอดภัยได้ทันที</li>
+                <li>รับรายงานผลแบบละเอียดพร้อมคำแนะนำ</li>
+                <li>รองรับภาษาโปรแกรมยอดนิยมมากมาย</li>
+                <li>อัปเดตและพัฒนาฟีเจอร์ใหม่ๆ อยู่เสมอ</li>
+            </ul>
+        </div>
+
+        <div class="signup-form">
+            <h2>📝 สมัครสมาชิก</h2>
+
+            {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                        <li {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <ul class="errorlist">
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">
+                            {% if field.name == 'username' %}👤{% elif field.name == 'email' %}📧{% elif 'password' in field.name %}🔑{% endif %}
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <small class="help-text" style="display: block; color: #888; font-size: 0.85rem; margin-top: 0.3rem;">{{ field.help_text }}</small>
+                        {% endif %}
+                        {% if field.errors %}
+                            <ul class="errorlist">
+                                {% for error in field.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <button type="submit">สมัครสมาชิก</button>
+            </form>
+
+            <p class="login-link">
+                มีบัญชีแล้ว? <a href="{% url 'login' %}">เข้าสู่ระบบ</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

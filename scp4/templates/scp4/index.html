@@ -1,0 +1,745 @@
+{% extends "scp4/base.html" %}
+{% load static %}
+
+{% block title %}AI Code Reviewer - วิเคราะห์โค้ด{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Global Content Area adjustments for a brighter dark theme (from base.html, overridden here) */
+.content {
+    background-color: #242424; /* Slightly brighter dark background for the main content area */
+    color: #e0e0e0; /* Light grey text for contrast */
+    border-radius: 12px; /* Slightly more rounded */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4); /* Deeper shadow */
+    padding: 3rem; /* More padding */
+    max-width: 900px; /* Keep max-width for this page */
+    margin: 2rem auto; /* Center content block */
+}
+
+/* Custom styles for the index/analyze page - Enhanced "Cool" look */
+.content h1 {
+    font-size: 2.8em;
+    font-weight: 800;
+    
+    display: flex; /* Use flexbox to center content */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically (if needed for line-height) */
+    
+    margin-bottom: 40px;
+    letter-spacing: 1px;
+    position: relative; /* Needed for the border */
+    padding: 15px 30px; /* Padding inside the border */
+    border-radius: 12px; /* Rounded corners for the border */
+    
+    background: linear-gradient(135deg, #00aeff 0%, #0073ff 50%, #017d05 100%); /* Blue to green gradient */
+    box-shadow: 0 0 25px rgba(0, 123, 255, 0.6), 0 0 10px rgba(76, 175, 80, 0.4); /* Dual glow shadow */
+    
+    animation: borderGlow 3s infinite alternate ease-in-out; 
+}
+
+@keyframes borderGlow {
+    0% { 
+        box-shadow: 0 0 20px rgba(0, 123, 255, 0.5), 0 0 10px rgba(76, 175, 80, 0.3);
+        border-color: rgba(0, 123, 255, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(0, 123, 255, 0.8), 0 0 15px rgba(76, 175, 80, 0.5);
+        border-color: rgba(76, 175, 80, 0.7);
+    }
+    100% { 
+        box-shadow: 0 0 20px rgba(0, 123, 255, 0.5), 0 0 10px rgba(76, 175, 80, 0.3);
+        border-color: rgba(0, 123, 255, 0.7);
+    }
+}
+
+.content h1 span {
+    background: linear-gradient(90deg, #8aff8a, #4CAF50);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+    text-shadow: 0 0 8px rgba(138, 255, 138, 0.5);
+}
+
+textarea#code-input {
+    width: calc(100% - 30px);
+    padding: 20px;
+    border: 2px solid #3a3a3a;
+    border-radius: 12px;
+    font-family: 'Fira Code', 'Roboto Mono', monospace;
+    font-size: 1.05rem;
+    min-height: 400px;
+    box-sizing: border-box;
+    margin-bottom: 30px;
+    background-color: #1e1e1e;
+    color: #00FF00; /* Green text for code area */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    resize: vertical;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.4);
+    outline: none;
+}
+
+textarea#code-input:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.5), inset 0 2px 5px rgba(0,0,0,0.6);
+}
+
+button#analyze-button {
+    background: linear-gradient(45deg, #4CAF50, #66BB6A);
+    color: white;
+    padding: 18px 45px;
+    font-size: 1.3em;
+    font-weight: bold;
+    border: none;
+    border-radius: 35px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.4);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+button#analyze-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: skewX(-20deg);
+    transition: all 0.4s ease;
+    z-index: -1;
+}
+
+button#analyze-button:hover::before {
+    left: 100%;
+}
+
+button#analyze-button:hover {
+    background: linear-gradient(45deg, #66BB6A, #4CAF50);
+    box-shadow: 0 12px 25px rgba(76, 175, 80, 0.5);
+    transform: translateY(-3px);
+}
+
+button#analyze-button:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+}
+
+.message {
+    margin-top: 30px;
+    padding: 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    transform: translateY(10px);
+}
+
+.message.hidden {
+    display: none;
+}
+
+.message:not(.hidden) {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.loading-message {
+    background-color: #333;
+    /* color property removed as it's set inline in HTML */
+    border: 1px solid #4CAF50;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.error-message {
+    background-color: #442222;
+    /* color property removed as it's set inline in HTML */
+    border: 1px solid #FF5252;
+    box-shadow: 0 0 10px rgba(255, 82, 82, 0.3);
+}
+
+.results-container { 
+    margin-top: 50px;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: none;
+    color: #e0e0e0;
+}
+
+.analysis-card {
+    background-color: #1a1a1a;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    color: #e0e0e0;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #333;
+}
+
+.analysis-card h3 {
+    font-size: 2em;
+    color: #4CAF50;
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #333;
+    text-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
+    position: relative;
+}
+.analysis-card h3::before {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(to right, transparent, #4CAF50, transparent);
+    border-radius: 2px;
+}
+
+.code-section, .result-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: #222;
+    border-radius: 10px;
+    border: 1px solid #333;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.code-section p, .result-section p {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #8BC34A;
+    margin-bottom: 15px;
+    border-bottom: 1px dashed #444;
+    padding-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.code-section p::before { content: '```'; color: #4CAF50; }
+.result-section p::before { content: '📊'; color: #8BC34A; }
+
+.code-display {
+    background-color: #1e1e1e;
+    color: #00FF00;
+    padding: 15px;
+    border-radius: 8px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: 'Fira Code', 'Roboto Mono', monospace;
+    font-size: 0.95rem;
+    border: 1px solid #333;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.6);
+    transition: box-shadow 0.3s ease;
+}
+.code-display:hover {
+    box-shadow: inset 0 1px 5px rgba(0,0,0,0.8), 0 0 10px rgba(0,255,0,0.2);
+}
+
+.vulnerability-item {
+    margin-bottom: 25px;
+    padding: 20px;
+    border-radius: 10px;
+    background-color: #3a2a1a;
+    border: 1px solid #d69933;
+    box-shadow: 0 5px 15px rgba(255, 165, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.vulnerability-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(255, 165, 0, 0.4);
+    border-color: #FFC107;
+}
+
+.vulnerability-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: linear-gradient(to right, #d69933, #FFC107, #d69933);
+    opacity: 0.9;
+    pointer-events: none;
+}
+
+.vulnerability-item h4 {
+    color: #FFC107;
+    font-size: 1.6em;
+    margin-top: 0;
+    margin-bottom: 10px;
+    text-shadow: 0 0 5px rgba(255, 193, 7, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.vulnerability-item h4::before {
+    content: '🚨';
+    color: #FF5252;
+    font-size: 1.2em;
+    vertical-align: middle;
+    animation: blink 1.5s infinite alternate;
+}
+@keyframes blink {
+    0% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
+.vulnerability-item p {
+    margin: 0;
+    line-height: 1.8;
+    color: #ccc;
+    font-size: 1.05em;
+}
+
+.vulnerability-item.safe {
+    background-color: #2a3a2a;
+    border: 1px solid #4CAF50;
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.2);
+}
+.vulnerability-item.safe:hover {
+    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.4);
+    border-color: #66BB6A;
+}
+
+.vulnerability-item.safe::before {
+    background: linear-gradient(to right, #4CAF50, #66BB6A, #4CAF50);
+}
+
+.vulnerability-item.safe h4 {
+    color: #4CAF50;
+    text-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+}
+
+.vulnerability-item.safe h4::before {
+    content: '✅';
+    color: #66BB6A;
+    animation: none;
+}
+
+.raw-output-display {
+    background-color: #1e1e1e;
+    color: #00FF00;
+    padding: 20px;
+    border-radius: 10px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: 'Fira Code', 'Roboto Mono', monospace;
+    font-size: 0.95rem;
+    border: 1px solid #333;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.6);
+    margin-top: 15px;
+    transition: box-shadow 0.3s ease;
+}
+.raw-output-display:hover {
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.8), 0 0 15px rgba(0,255,0,0.3);
+}
+
+/* Styles for severity badges inside vulnerability-item h4 */
+.vulnerability-item .severity-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: bold;
+    color: white;
+    margin-left: 10px;
+    vertical-align: middle; /* Align with text */
+}
+.vulnerability-item .severity-badge.critical { background-color: #dc3545; } /* Red */
+.vulnerability-item .severity-badge.high { background-color: #fd7e14; }    /* Orange */
+.vulnerability-item .severity-badge.medium { background-color: #ffc107; }  /* Yellow */
+.vulnerability-item .severity-badge.low { background-color: #17a2b8; }    /* Light Blue */
+.vulnerability-item .severity-badge.info { background-color: #6c757d; }    /* Gray */
+
+
+/* PDF Export button styles (located after analysis results) */
+.export-buttons {
+    text-align: center;
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    gap: 20px; /* Space between buttons */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
+.export-buttons .btn {
+    background: linear-gradient(45deg, #007bff, #0056b3); /* Blue gradient */
+    color: white;
+    padding: 12px 25px;
+    font-size: 1em;
+    font-weight: bold;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);
+    text-decoration: none; /* For anchor tags styled as buttons */
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 180px; /* Ensure minimum width for better appearance */
+    justify-content: center;
+}
+
+.export-buttons .btn:hover {
+    background: linear-gradient(45deg, #0056b3, #007bff);
+    box-shadow: 0 8px 20px rgba(0, 123, 255, 0.6);
+    transform: translateY(-2px);
+}
+.export-buttons .btn:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* --- START: UPDATED STYLES FOR DELETE AND HISTORY LIST BUTTONS --- */
+.delete-options {
+    display: flex;
+    justify-content: flex-end; /* Align to the right */
+    gap: 15px; /* Space between buttons */
+    margin-bottom: 20px;
+    padding: 10px 0;
+    border-bottom: 1px solid #333;
+    flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+}
+
+.delete-options .btn {
+    padding: 10px 20px; /* Slightly more padding */
+    font-size: 0.95em; /* Slightly larger font */
+    border-radius: 20px; /* More rounded */
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px; /* More space for icon */
+    font-weight: bold;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3); /* Subtle shadow */
+    cursor: pointer;
+    text-decoration: none; /* In case it's an anchor */
+}
+
+.delete-options .btn-primary { /* "ลบที่เลือก" */
+    background: linear-gradient(45deg, #00aeff, #0073ff); /* Blueish gradient */
+    color: white;
+}
+.delete-options .btn-primary:hover {
+    background: linear-gradient(45deg, #0073ff, #00aeff);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 123, 255, 0.5); /* Enhanced shadow */
+}
+
+.delete-options .btn-danger { /* "ล้างประวัติทั้งหมด" */
+    background: linear-gradient(45deg, #dc3545, #b82333); /* Red gradient */
+    color: white;
+}
+.delete-options .btn-danger:hover {
+    background: linear-gradient(45deg, #b82333, #dc3545);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(220, 53, 69, 0.5); /* Enhanced shadow */
+}
+
+.history-list-item { /* Base style for each history item */
+    margin-bottom: 15px;
+    border-bottom: 1px dashed #444; /* Slightly softer dash */
+    padding-bottom: 12px; /* More padding */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* Allow wrapping for responsiveness */
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    padding-top: 12px;
+    padding-left: 15px; /* More space for checkbox */
+    background-color: #242424; /* Subtle background for each item */
+    border: 1px solid #333; /* Soft border */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3); /* Soft shadow */
+}
+.history-list-item:hover {
+    background-color: #2a2a2a; /* Slightly lighter background on hover */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5); /* Deeper shadow on hover */
+    transform: translateY(-2px); /* Slight lift on hover */
+}
+
+.history-checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* More space between checkbox and info */
+    flex-grow: 1; /* Allow wrapper to take available space */
+    min-width: 180px; /* Ensure info block doesn't get too small */
+}
+
+.history-checkbox {
+    width: 22px; /* Slightly larger checkbox */
+    height: 22px;
+    cursor: pointer;
+    accent-color: #4CAF50; /* Green accent color for checkbox */
+    min-width: 22px; /* Prevent shrinking */
+}
+
+/* Styles for the "View Details" and "PDF" buttons within history list items */
+.history-list-item .btn {
+    padding: 8px 15px; /* Consistent padding */
+    font-size: 0.85em; /* Consistent font size */
+    border-radius: 15px; /* Consistent rounding */
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap; /* Prevent text wrapping */
+}
+
+.history-list-item .view-details-btn {
+    background: linear-gradient(45deg, #007bff, #0056b3); /* Blue gradient */
+    color: white;
+}
+.history-list-item .view-details-btn:hover {
+    background: linear-gradient(45deg, #0056b3, #007bff);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
+}
+
+.history-list-item .export-pdf-btn {
+    background: linear-gradient(45deg, #dc3545, #b82333); /* Red gradient */
+    color: white;
+}
+.history-list-item .export-pdf-btn:hover {
+    background: linear-gradient(45deg, #b82333, #dc3545);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4);
+}
+
+.history-list-item .btn:active { /* General active state for history buttons */
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* --- END: UPDATED STYLES FOR DELETE AND HISTORY LIST BUTTONS --- */
+
+
+/* Media Queries for Responsiveness */
+@media (max-width: 768px) {
+    .content {
+        padding: 2rem;
+        margin: 1.5rem auto;
+    }
+    .content h1 {
+        font-size: 2.2em;
+        margin-bottom: 30px;
+        padding: 12px 25px;
+    }
+    textarea#code-input {
+        min-height: 300px;
+        padding: 15px;
+    }
+    button#analyze-button {
+        padding: 15px 35px;
+        font-size: 1.1em;
+    }
+    .analysis-card {
+        padding: 25px;
+    }
+    .analysis-card h3 {
+        font-size: 1.8em;
+        margin-bottom: 25px;
+        padding-bottom: 10px;
+    }
+    .code-section, .result-section {
+        padding: 15px;
+        margin-bottom: 25px;
+    }
+    .code-section p, .result-section p {
+        font-size: 1em;
+        margin-bottom: 10px;
+    }
+    .code-display, .raw-output-display {
+        padding: 12px;
+        font-size: 0.9rem;
+    }
+    .vulnerability-item {
+        padding: 18px;
+        margin-bottom: 20px;
+    }
+    .vulnerability-item h4 {
+        font-size: 1.4em;
+        margin-bottom: 8px;
+    }
+    .vulnerability-item p {
+        font-size: 1em;
+    }
+    .export-buttons, .delete-options {
+        flex-direction: column; /* Stack buttons vertically */
+        gap: 15px; /* Space between stacked buttons */
+    }
+    .delete-options {
+        align-items: stretch; /* Stretch buttons to full width */
+    }
+    .history-list-item {
+        flex-direction: column; /* Stack checkbox/info and buttons */
+        align-items: flex-start; /* Align stacked items to the left */
+        gap: 10px;
+        padding-right: 15px; /* Add some right padding for consistency */
+    }
+    .history-list-item > div { /* Target the two main divs inside li */
+        width: 100%; /* Make them full width */
+        box-sizing: border-box;
+    }
+    .history-list-item .history-checkbox-wrapper {
+        justify-content: flex-start;
+        width: 100%;
+    }
+    .history-list-item div:last-child { /* The div containing the buttons */
+        display: flex;
+        justify-content: flex-end; /* Align buttons to the right within their div */
+        gap: 10px; /* Space between the two buttons */
+        width: 100%; /* Ensure button container is full width */
+    }
+}
+
+@media (max-width: 480px) {
+    .content {
+        padding: 1.5rem;
+        margin: 1rem auto;
+    }
+    .content h1 {
+        font-size: 1.8em;
+        margin-bottom: 25px;
+        padding: 10px 20px;
+    }
+    textarea#code-input {
+        min-height: 250px;
+        padding: 10px;
+        font-size: 0.95rem;
+    }
+    button#analyze-button {
+        padding: 12px 25px;
+        font-size: 1em;
+    }
+    .analysis-card {
+        padding: 20px;
+    }
+    .analysis-card h3 {
+        font-size: 1.6em;
+        margin-bottom: 20px;
+    }
+    .code-section, .result-section {
+        padding: 12px;
+        margin-bottom: 20px;
+    }
+    .code-section p, .result-section p {
+        font-size: 0.95em;
+    }
+    .code-display, .raw-output-display {
+        padding: 10px;
+        font-size: 0.85rem;
+    }
+    .vulnerability-item {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    .vulnerability-item h4 {
+        font-size: 1.2em;
+        margin-bottom: 5px;
+    }
+    .vulnerability-item p {
+        font-size: 0.9em;
+    }
+}
+</style>
+{% endblock extra_head %}
+
+<body>
+    {% block content %}
+        <h1 style="text-align: center;">
+            <span class="title-text">🔐 AI Code Reviewer</span>
+        </h1>
+
+        <div id="scan-input-area">
+            <textarea id="code-input" rows="15"
+                placeholder="📝 วางโค้ด Python, JavaScript, C++, Go, Java, หรืออื่นๆ ที่นี่..."></textarea>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="analyze-button" class="btn btn-primary">🔍 วิเคราะห์โค้ด</button>
+            </div>
+        </div>
+
+        <p id="loading-message" class="message loading-message hidden" style="text-align:center; color:#ffa726;">
+            กำลังวิเคราะห์โค้ด...
+        </p>
+        <p id="error-message" class="message error-message hidden" style="text-align:center; color:#ef5350;"></p>
+
+        <!-- Container แสดงผลลัพธ์สแกน -->
+        <div id="results-container" class="results-container hidden" style="margin-top: 30px;"></div>
+
+        <hr style="margin-top: 60px; border-color: #333;">
+        <h2 style="text-align: center; color: #4CAF50; margin-bottom: 30px; text-shadow: 0 0 8px rgba(76, 175, 80, 0.3);">
+            ประวัติการวิเคราะห์โค้ดของคุณ
+        </h2>
+
+        <div class="delete-options" style="text-align:center; margin-bottom: 20px;">
+            <button id="delete-selected-button" class="btn btn-primary" disabled>
+                🗑️ ลบรายการที่เลือก
+            </button>
+            <form id="clear-all-form" action="{% url 'scp4:clear_scan_history' %}" method="post" onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการล้างประวัติการวิเคราะห์ทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้!');" style="display:inline-block; margin-left: 10px;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">🗑️ ล้างประวัติทั้งหมด</button>
+            </form>
+        </div>
+
+        {% if scan_results %}
+            <ul style="list-style: none; padding: 0;">
+                {% for result in scan_results|dictsortreversed:"scanned_at" %}
+                    <li class="history-list-item" data-scan-id="{{ result.id }}" style="margin-bottom: 20px; background:#1E1E1E; padding: 15px; border-radius: 8px;">
+                        <div class="history-checkbox-wrapper" style="display:flex; align-items:center; gap:10px;">
+                            <input type="checkbox" class="history-checkbox" value="{{ result.id }}">
+                            <div>
+                                <span class="scan-info-text" style="color: #9ccc65; font-weight: bold;">🗓️ {{ result.scanned_at|date:"d M Y H:i:s" }}</span><br>
+                                <span class="scan-info-text" style="color: #e0e0e0;">พบช่องโหว่:
+                                    <strong style="color:
+                                        {% if result.high_severity_count > 0 %}
+                                            #dc3545
+                                        {% else %}
+                                            {% if result.total_vulnerabilities > 0 %}
+                                                #ffc107
+                                            {% else %}
+                                                #4CAF50
+                                            {% endif %}
+                                        {% endif %};">
+                                        {{ result.total_vulnerabilities }}
+                                    </strong> รายการ
+                                </span>
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <a href="{% url 'scp4:view_scan_result' result.id %}" class="btn view-details-btn">👁️ ดูรายละเอียด</a>
+                            <a href="{% url 'scp4:export_scan_report_pdf' result.id %}" target="_blank" class="btn export-pdf-btn">⬇️ PDF</a>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p style="text-align: center; color: #aaa;">ยังไม่มีผลการสแกน. เริ่มต้นด้วยการวางโค้ดและกดปุ่มวิเคราะห์เลย!</p>
+        {% endif %}
+    {% endblock content %}
+
+    {% block extra_scripts %}
+        <script src="{% static 'js/analyze.js' %}"></script>
+    {% endblock extra_scripts %}
+</body>

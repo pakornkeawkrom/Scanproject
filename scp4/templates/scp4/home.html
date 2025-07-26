@@ -1,0 +1,652 @@
+{# scp4/templates/scp4/home.html #}
+{% extends "scp4/base.html" %}
+{% load static %}
+
+{% block title %}หน้าแรก - Code Scan Pro{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* --- Home Page Specific Styles (Adapted for Dark Theme) --- */
+    /* Adjustments for the main content block from base.html to fit home page layout */
+    .content {
+        background-color: transparent; /* Make content background transparent for full-width sections */
+        box-shadow: none; /* Remove shadow as sections will have their own */
+        padding: 0; /* Remove padding as sections will define their own */
+        max-width: none; /* Allow sections to take full width */
+        margin: 0; /* Remove margin as sections will be controlled by home-page wrapper */
+    }
+
+    .home-page {
+        max-width: 1200px; /* Wider max-width for better display of sections on large screens */
+        margin: 2rem auto; /* Center the whole home-page container, using rem */
+        padding: 0 1.5rem; /* Add some horizontal padding to the wrapper itself, using rem */
+        box-sizing: border-box; /* Ensure padding doesn't cause overflow */
+    }
+
+    /* User Status Section (Enhanced for Dark Mode) */
+    .user-status-wrapper {
+        background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); 
+        color: #e0e0e0; /* Light grey text */
+        padding: 2.2rem 3rem; /* Generous padding, using rem */
+        border-radius: 1rem; /* More rounded corners, using rem */
+        margin-bottom: 3rem; /* More space below this section, using rem */
+        box-shadow: 0 0.9rem 2.5rem rgba(0, 0, 0, 0.4), /* Deeper, more noticeable shadow, using rem */
+                    0 0.3rem 0.9rem rgba(0, 0, 0, 0.2);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(44, 83, 100, 0.3); /* Subtle border matching gradient */
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        max-width: 900px; /* เพิ่ม max-width ให้เหมาะสมกับเนื้อหา */
+        margin-left: auto;
+        margin-right: auto;
+        box-sizing: border-box; /* สำคัญ */
+    }
+    .user-status-wrapper:hover {
+        transform: translateY(-0.3rem); /* Subtle lift on hover, using rem */
+        box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.6),
+                    0 0.5rem 1.5rem rgba(0, 0, 0, 0.3);
+    }
+
+    /* Subtle background pattern/glow for extra coolness */
+    .user-status-wrapper::before {
+        content: '';
+        position: absolute;
+        top: -20%; /* Adjusted for better placement */
+        left: -20%;
+        width: 140%; /* Smaller for less intense effect */
+        height: 140%;
+        background: radial-gradient(circle at center, rgba(76, 175, 80, 0.08) 0%, transparent 60%); /* Green glow */
+        transform: rotate(45deg);
+        opacity: 0.7;
+        pointer-events: none;
+        animation: rotateGlow 15s linear infinite; /* Slow rotation animation */
+    }
+
+    @keyframes rotateGlow {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .user-status-wrapper .user-info {
+        max-width: 700px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.8rem; /* Increased space between lines, using rem */
+        position: relative;
+        z-index: 1; /* Bring content above pseudo-elements */
+    }
+
+    .user-status-wrapper .user-info p {
+        margin: 0;
+        font-size: 1.3rem; /* Slightly smaller, more controlled font, using rem */
+        font-weight: 500; /* Medium weight */
+        line-height: 1.4;
+        text-shadow: 0 0 0.3rem rgba(0,0,0,0.4); /* Stronger text shadow, using rem */
+    }
+
+    .user-status-wrapper .user-info strong {
+        color: #8aff8a; /* Bright, futuristic green for emphasis */
+        font-weight: 700; /* Bold */
+        text-transform: uppercase;
+        letter-spacing: 0.08rem; /* More letter spacing, using rem */
+        text-shadow: 0 0 0.5rem rgba(138, 255, 138, 0.7); /* Glowing effect for strong text, using rem */
+    }
+
+    /* Hero Section (Adapted for Dark Mode) */
+    .hero-section {
+        background: linear-gradient(135deg, #1f1f1f, #2f2f2f); /* Darker, subtle gradient */
+        color: #f0f0f0; /* Lighter text for contrast */
+        padding: 4.5rem 2.5rem; /* More generous padding, using rem */
+        text-align: center;
+        border-radius: 1rem; /* More rounded, using rem */
+        margin-bottom: 3rem; /* Space below, using rem */
+        box-shadow: 0 0.9rem 2.5rem rgba(0,0,0,0.4),
+                    0 0.3rem 0.9rem rgba(0,0,0,0.2);
+        border: 1px solid #333; /* Subtle border */
+        position: relative;
+        overflow: hidden;
+    }
+    .hero-section::before { /* Subtle pattern overlay */
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: radial-gradient(circle, #3a3a3a 1px, transparent 1px);
+        background-size: 1.2rem 1.2rem; /* Using rem */
+        opacity: 0.1;
+        z-index: 0;
+    }
+    .hero-content {
+        max-width: 900px; /* Wider content for hero */
+        margin: 0 auto;
+        position: relative; /* Bring content above pseudo-elements */
+        z-index: 1;
+    }
+    .hero-section h1 {
+        font-size: 3rem; /* Even larger heading, using rem */
+        margin-bottom: 1rem; /* Using rem */
+        line-height: 1.1;
+        background: linear-gradient(90deg, #4CAF50, #8BC34A); 
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: inline-block;
+        text-shadow: 0 0 1rem rgba(76, 175, 80, 0.7); /* Stronger glow, using rem */
+        animation: pulseTextGlow 2s infinite alternate; /* Pulsing glow */
+    }
+
+    @keyframes pulseTextGlow {
+        0% { text-shadow: 0 0 0.8rem rgba(76, 175, 80, 0.5); }
+        100% { text-shadow: 0 0 1.2rem rgba(76, 175, 80, 0.9); }
+    }
+
+    .hero-section .tagline {
+        font-size: 1.15rem; /* Larger tagline, using rem */
+        margin-bottom: 2rem; /* Using rem */
+        line-height: 1.6;
+        opacity: 0.9;
+        color: #c0c0c0; /* Slightly darker grey */
+        text-shadow: 0 0 0.3rem rgba(0,0,0,0.3); /* Using rem */
+    }
+    .hero-actions {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem; /* More space between buttons, using rem */
+        flex-wrap: wrap; /* Allow wrapping on small screens */
+    }
+    .hero-actions .hero-button {
+        padding: 1rem 2rem; /* Larger buttons, using rem */
+        font-size: 1.1rem; /* Larger font, using rem */
+        border-radius: 1.5rem; /* More pill-shaped, using rem */
+        font-weight: 600; /* Semi-bold */
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+        box-shadow: 0 0.5rem 1.2rem rgba(0,0,0,0.3); /* Subtle shadow, using rem */
+    }
+
+    /* Specific Hero Button Styles with enhanced effects */
+    .hero-button.primary {
+        background: linear-gradient(45deg, #4CAF50, #66BB6A); /* Green gradient */
+        color: white;
+    }
+    .hero-button.primary:hover {
+        background: linear-gradient(45deg, #66BB6A, #4CAF50); /* Invert gradient */
+        box-shadow: 0 0.7rem 1.5rem rgba(76, 175, 80, 0.5); /* Stronger glow, using rem */
+        transform: translateY(-0.3rem); /* Lift, using rem */
+    }
+    .hero-button.secondary {
+        background: linear-gradient(45deg, #007bff, #0056b3); /* Blue gradient */
+        color: white;
+    }
+    .hero-button.secondary:hover {
+        background: linear-gradient(45deg, #0056b3, #007bff); /* Invert gradient */
+        box-shadow: 0 0.7rem 1.5rem rgba(0, 123, 255, 0.5); /* Stronger glow, using rem */
+        transform: translateY(-0.3rem); /* Using rem */
+    }
+
+    .hero-button::before { /* Common reflection effect for hero buttons */
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.2); /* Light reflection */
+        transform: skewX(-20deg);
+        transition: all 0.4s ease;
+        z-index: -1;
+    }
+    .hero-button:hover::before {
+        left: 100%; /* Move reflection across */
+    }
+
+
+    /* Features Section (Adapted for Dark Mode) */
+    .features-section {
+        text-align: center;
+        padding: 4rem 0; /* More padding, using rem */
+        background-color: #242424; /* Slightly lighter dark background */
+        border-radius: 1rem; /* Using rem */
+        margin-bottom: 3rem; /* Using rem */
+        box-shadow: 0 0.6rem 1.8rem rgba(0,0,0,0.3); /* Using rem */
+        border: 1px solid #333;
+    }
+    .features-section h2 {
+        font-size: 2.2rem; /* Larger heading, using rem */
+        color: #f0f0f0; /* Light text */
+        margin-bottom: 2.5rem; /* Using rem */
+        text-shadow: 0 0 0.6rem rgba(255,255,255,0.1); /* Using rem */
+    }
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Slightly wider min width */
+        gap: 2rem; /* More space between items, using rem */
+        max-width: 1000px; /* Wider grid */
+        margin: 0 auto;
+        padding: 0 1rem; /* Add padding to grid itself for smaller screens */
+    }
+    .feature-item {
+        background-color: #1e1e1e; /* Darker background for items */
+        padding: 2rem; /* More padding, using rem */
+        border-radius: 0.8rem; /* Using rem */
+        box-shadow: 0 0.3rem 1.2rem rgba(0,0,0,0.3); /* Deeper shadow, using rem */
+        text-align: center; /* Center content in feature items */
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 1px solid #3a3a3a; /* Subtle border */
+    }
+    .feature-item:hover {
+        transform: translateY(-0.5rem); /* More pronounced lift, using rem */
+        box-shadow: 0 0.6rem 1.8rem rgba(0,0,0,0.5); /* Stronger shadow on hover, using rem */
+    }
+    .feature-item i {
+        font-size: 3rem; /* Larger icons, using rem */
+        color: #4CAF50; /* Green icons */
+        margin-bottom: 1rem; /* Using rem */
+        display: block;
+        text-align: center;
+        text-shadow: 0 0 0.6rem rgba(76, 175, 80, 0.4); /* Glow for icons, using rem */
+    }
+    /* Placeholder for actual icons - you'd replace these with an icon library like Font Awesome */
+    .icon-ai::before { content: '🧠'; } /* Example emoji icons */
+    .icon-report::before { content: '📄'; }
+    .icon-secure::before { content: '🔒'; }
+
+    .feature-item h3 {
+        font-size: 1.6rem; /* Larger heading, using rem */
+        color: #8BC34A; /* Lighter green for subheadings */
+        margin-bottom: 0.8rem; /* Using rem */
+        text-align: center;
+        letter-spacing: 0.03rem; /* Using rem */
+    }
+    .feature-item p {
+        color: #c0c0c0; /* Lighter text */
+        line-height: 1.7;
+        font-size: 0.95rem; /* Using rem */
+    }
+
+    /* CTA Section (Adapted for Dark Mode) */
+    .cta-section {
+        text-align: center;
+        padding: 4rem 2.5rem; /* Using rem */
+        background: linear-gradient(135deg, #1e1e1e, #2e2e2e); /* Dark gradient for CTA */
+        border-radius: 1rem; /* Using rem */
+        margin-bottom: 2rem; /* Space above footer if any, using rem */
+        box-shadow: 0 0.6rem 1.8rem rgba(0,0,0,0.3); /* Using rem */
+        border: 1px solid #3a3a3a;
+    }
+    .cta-section h2 {
+        font-size: 2rem; /* Larger heading, using rem */
+        color: #f0f0f0; /* Light text */
+        margin-bottom: 1.5rem; /* Using rem */
+        text-shadow: 0 0 0.6rem rgba(255,255,255,0.1); /* Using rem */
+    }
+    .cta-section p {
+        font-size: 1.1rem; /* Larger text, using rem */
+        color: #c0c0c0;
+        margin-bottom: 2rem; /* Using rem */
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+        line-height: 1.7;
+    }
+    .cta-actions {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem; /* Space between buttons, using rem */
+        flex-wrap: wrap;
+    }
+    .cta-actions .cta-button {
+        padding: 1rem 2rem; /* Larger buttons, using rem */
+        font-size: 1.1rem; /* Using rem */
+        border-radius: 1.5rem; /* Pill-shaped, using rem */
+        font-weight: 600;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+        box-shadow: 0 0.5rem 1.2rem rgba(0,0,0,0.3); /* Using rem */
+    }
+    /* Use the same button classes as hero-actions for consistency */
+    .cta-button.primary {
+        background: linear-gradient(45deg, #4CAF50, #66BB6A); /* Green gradient */
+        color: white;
+    }
+    .cta-button.primary:hover {
+        background: linear-gradient(45deg, #66BB6A, #4CAF50); /* Invert gradient */
+        box-shadow: 0 0.7rem 1.5rem rgba(76, 175, 80, 0.5); /* Using rem */
+        transform: translateY(-0.3rem); /* Using rem */
+    }
+    .cta-button.secondary {
+        background: linear-gradient(45deg, #007bff, #0056b3); /* Blue gradient */
+        color: white;
+    }
+    .cta-button.secondary:hover {
+        background: linear-gradient(45deg, #0056b3, #007bff); /* Invert gradient */
+        box-shadow: 0 0.7rem 1.5rem rgba(0, 123, 255, 0.5); /* Using rem */
+        transform: translateY(-0.3rem); /* Using rem */
+    }
+
+    .cta-button::before { /* Common reflection effect for CTA buttons */
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.2);
+        transform: skewX(-20deg);
+        transition: all 0.4s ease;
+        z-index: -1;
+    }
+    .cta-button:hover::before {
+        left: 100%;
+    }
+
+
+    /* Media Queries for Responsiveness */
+    /* Adjustments for general scaling on slightly smaller desktops/laptops */
+    @media (max-width: 1200px) {
+        .home-page {
+            max-width: 95%; /* Adjust max-width to allow more space on wider screens */
+        }
+        .hero-section h1 {
+            font-size: 2.8rem;
+        }
+        .hero-section .tagline {
+            font-size: 1.1rem;
+        }
+        .features-section h2 {
+            font-size: 2rem;
+        }
+        .feature-item h3 {
+            font-size: 1.5rem;
+        }
+        .cta-section h2 {
+            font-size: 1.8rem;
+        }
+        .cta-section p {
+            font-size: 1rem;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .home-page {
+            padding: 0 1rem; /* More padding on smaller screens, using rem */
+        }
+        .user-status-wrapper {
+            padding: 1.8rem 2.5rem; /* Using rem */
+            margin-bottom: 2.5rem; /* Using rem */
+        }
+        .user-status-wrapper .user-info p {
+            font-size: 1.2rem; /* Using rem */
+        }
+        .hero-section {
+            padding: 3.5rem 2rem; /* Using rem */
+        }
+        .hero-section h1 {
+            font-size: 2.5rem; /* Using rem */
+            margin-bottom: 0.8rem; /* Using rem */
+        }
+        .hero-section .tagline {
+            font-size: 1rem; /* Using rem */
+            margin-bottom: 1.5rem; /* Using rem */
+        }
+        .hero-actions {
+            flex-direction: column;
+            gap: 1rem; /* Using rem */
+        }
+        .hero-actions .hero-button {
+            width: 85%; /* Slightly wider buttons */
+            margin: 0 auto;
+            font-size: 1rem; /* Using rem */
+            padding: 0.9rem 1.8rem; /* Using rem */
+        }
+        .features-section {
+            padding: 3rem 0; /* Using rem */
+        }
+        .features-section h2 {
+            font-size: 1.8rem; /* Using rem */
+            margin-bottom: 2rem; /* Using rem */
+        }
+        .feature-grid {
+            gap: 1.5rem; /* Using rem */
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Adjust min width for 2 columns */
+        }
+        .feature-item {
+            padding: 1.5rem; /* Using rem */
+        }
+        .feature-item i {
+            font-size: 2.5rem; /* Using rem */
+            margin-bottom: 0.8rem; /* Using rem */
+        }
+        .feature-item h3 {
+            font-size: 1.3rem; /* Using rem */
+        }
+        .feature-item p {
+            font-size: 0.9rem; /* Using rem */
+        }
+        .cta-section {
+            padding: 3.5rem 2rem; /* Using rem */
+        }
+        .cta-section h2 {
+            font-size: 1.8rem; /* Using rem */
+        }
+        .cta-section p {
+            font-size: 0.95rem; /* Using rem */
+        }
+        .cta-actions {
+            flex-direction: column;
+            gap: 1rem; /* Using rem */
+        }
+        .cta-actions .cta-button {
+            width: 85%; /* Slightly wider buttons */
+            margin: 0 auto;
+            font-size: 1rem; /* Using rem */
+            padding: 0.9rem 1.8rem; /* Using rem */
+        }
+    }
+
+    @media (max-width: 768px) {
+        .home-page {
+            padding: 0 0.8rem; /* Using rem */
+        }
+        .user-status-wrapper {
+            padding: 1.5rem 2rem; /* Using rem */
+            margin-bottom: 2rem; /* Using rem */
+        }
+        .user-status-wrapper .user-info p {
+            font-size: 1rem; /* Using rem */
+        }
+        .hero-section {
+            padding: 2.5rem 1.5rem; /* Using rem */
+        }
+        .hero-section h1 {
+            font-size: 2rem; /* Using rem */
+            margin-bottom: 0.6rem; /* Using rem */
+        }
+        .hero-section .tagline {
+            font-size: 0.9rem; /* Using rem */
+            margin-bottom: 1rem; /* Using rem */
+        }
+        .hero-actions .hero-button,
+        .cta-actions .cta-button {
+            width: 95%; /* Make buttons full width on small screens */
+            font-size: 0.95rem; /* Using rem */
+            padding: 0.8rem 1.5rem; /* Using rem */
+        }
+        .features-section {
+            padding: 2rem 0; /* Using rem */
+        }
+        .features-section h2 {
+            font-size: 1.6rem; /* Using rem */
+            margin-bottom: 1.5rem; /* Using rem */
+        }
+        .feature-grid {
+            grid-template-columns: 1fr; /* Stack on very small screens */
+            gap: 1rem; /* Using rem */
+            padding: 0 0.8rem; /* Adjust padding for single column */
+        }
+        .feature-item {
+            padding: 1.2rem; /* Using rem */
+        }
+        .feature-item i {
+            font-size: 2rem; /* Using rem */
+            margin-bottom: 0.6rem; /* Using rem */
+        }
+        .feature-item h3 {
+            font-size: 1.2rem; /* Using rem */
+        }
+        .feature-item p {
+            font-size: 0.85rem; /* Using rem */
+        }
+        .cta-section {
+            padding: 2.5rem 1.5rem; /* Using rem */
+        }
+        .cta-section h2 {
+            font-size: 1.6rem; /* Using rem */
+        }
+        .cta-section p {
+            font-size: 0.9rem; /* Using rem */
+        }
+    }
+
+    @media (max-width: 480px) {
+        /* Further reduce font sizes and padding for very small mobile screens */
+        .home-page {
+            padding: 0 0.5rem; /* Using rem */
+        }
+        .user-status-wrapper {
+            padding: 1rem 1.2rem; /* Using rem */
+            margin-bottom: 1.5rem; /* Using rem */
+        }
+        .user-status-wrapper .user-info p {
+            font-size: 0.9rem; /* Using rem */
+        }
+        .hero-section {
+            padding: 1.8rem 1rem; /* Using rem */
+        }
+        .hero-section h1 {
+            font-size: 1.8rem; /* Using rem */
+        }
+        .hero-section .tagline {
+            font-size: 0.85rem; /* Using rem */
+            margin-bottom: 0.8rem; /* Using rem */
+        }
+        .hero-actions .hero-button,
+        .cta-actions .cta-button {
+            padding: 0.7rem 1.2rem; /* Using rem */
+            font-size: 0.85rem; /* Using rem */
+            border-radius: 1.2rem; /* Using rem */
+        }
+        .features-section {
+            padding: 1.5rem 0; /* Using rem */
+        }
+        .features-section h2 {
+            font-size: 1.4rem; /* Using rem */
+            margin-bottom: 1rem; /* Using rem */
+        }
+        .feature-grid {
+            gap: 0.8rem; /* Using rem */
+            padding: 0 0.5rem; /* Using rem */
+        }
+        .feature-item {
+            padding: 1rem; /* Using rem */
+        }
+        .feature-item i {
+            font-size: 1.8rem; /* Using rem */
+            margin-bottom: 0.5rem; /* Using rem */
+        }
+        .feature-item h3 {
+            font-size: 1.1rem; /* Using rem */
+        }
+        .feature-item p {
+            font-size: 0.8rem; /* Using rem */
+        }
+        .cta-section {
+            padding: 1.8rem 1rem; /* Using rem */
+        }
+        .cta-section h2 {
+            font-size: 1.4rem; /* Using rem */
+        }
+        .cta-section p {
+            font-size: 0.85rem; /* Using rem */
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="home-page">
+    {% if user.is_authenticated %}
+    <section class="user-status-wrapper">
+        <div class="user-info">
+            <p>สถานะปัจจุบัน: <strong>{{ user.username }}</strong></p>
+            {% if user.is_superuser %}
+                <p>ระดับสิทธิ์: <strong>Admin</strong></p>
+            {% elif user.is_staff %}
+                <p>ระดับสิทธิ์: <strong>ผู้ดูแลระบบ</strong></p>
+            {% else %}
+                <p>ระดับสิทธิ์: <strong>ผู้ใช้ทั่วไป</strong></p>
+            {% endif %}
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1>{{ message|default:'ยินดีต้อนรับสู่ Code Scan Pro!' }}</h1>
+            <p class="tagline">แพลตฟอร์มวิเคราะห์ช่องโหว่โค้ดด้วยพลังของ AI เพื่อความปลอดภัยที่ยั่งยืนของคุณ</p>
+            <div class="hero-actions">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'scp4:index' %}" class="button-link hero-button primary">🚀 เริ่มวิเคราะห์โค้ดทันที!</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="button-link hero-button primary">🔐 เข้าสู่ระบบเพื่อเริ่มใช้งาน</a>
+                    <a href="{% url 'scp4:signup' %}" class="button-link hero-button secondary">📝 ยังไม่มีบัญชี? สมัครสมาชิก</a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section class="features-section">
+        <h2>ทำไมต้อง Code Scan Pro?</h2>
+        <div class="feature-grid">
+            <div class="feature-item">
+                <i class="icon-ai"></i>
+                <h3>ขับเคลื่อนด้วย AI</h3>
+                <p>ใช้โมเดล AI ขั้นสูงเพื่อระบุช่องโหว่ต่างๆ เช่น SQL Injection, XSS, Command Injection และอื่นๆ ได้อย่างรวดเร็วและแม่นยำ</p>
+            </div>
+            <div class="feature-item">
+                <i class="icon-report"></i>
+                <h3>รายงานที่เข้าใจง่าย</h3>
+                <p>รับผลการวิเคราะห์ที่ชัดเจน พร้อมตำแหน่งช่องโหว่และคำแนะนำในการแก้ไขที่นำไปใช้งานได้จริง</p>
+            </div>
+            <div class="feature-item">
+                <i class="icon-secure"></i>
+                <h3>เพิ่มความปลอดภัย</h3>
+                <p>ปกป้องแอปพลิเคชันของคุณจากภัยคุกคามทางไซเบอร์ ลดความเสี่ยงและสร้างความน่าเชื่อถือให้กับโค้ดของคุณ</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <h2>เริ่มต้นสร้างโค้ดที่ปลอดภัยยิ่งขึ้นวันนี้!</h2>
+        <p>ไม่ว่าคุณจะเป็นนักพัฒนาเดี่ยวหรือส่วนหนึ่งของทีม Code Scan Pro พร้อมช่วยคุณยกระดับมาตรฐานความปลอดภัยของโค้ด.</p>
+        <div class="cta-actions">
+            {% if user.is_authenticated %}
+                <a href="{% url 'scp4:index' %}" class="button-link cta-button primary">เริ่มวิเคราะห์โค้ดตอนนี้เลย</a>
+            {% else %}
+                <a href="{% url 'scp4:signup' %}" class="button-link cta-button primary">สร้างบัญชีฟรี</a>
+                <a href="{% url 'login' %}" class="button-link cta-button secondary">เข้าสู่ระบบ</a>
+            {% endif %}
+        </div>
+    </section>
+</div>
+
+{% endblock %}

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Code Scan Pro{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {% load static %}
+
+    <!-- CSRF token for JS access -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+
+    {% block extra_head %}{% endblock %}
+
+    <style>
+        /* Base Styles - for Navbar, body, content, footer */
+        body {
+            font-family: 'IBM Plex Sans Thai', sans-serif;
+            margin: 0;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.6;
+        }
+
+        /* Navbar Styles - Futuristic & Dark */
+        .navbar {
+            background: linear-gradient(90deg, #1e1e1e, #2a2a2a);
+            padding: 1.2rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid #333;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .navbar-brand {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #4CAF50;
+            text-decoration: none;
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+            letter-spacing: 1px;
+            transition: text-shadow 0.3s ease;
+        }
+        .navbar-brand:hover {
+            text-shadow: 0 0 15px rgba(76, 175, 80, 0.8);
+        }
+        .navbar-nav {
+            display: flex;
+            align-items: center;
+        }
+        .navbar-nav a {
+            color: #b0b0b0;
+            text-decoration: none;
+            margin-left: 2rem;
+            font-weight: 600;
+            transition: color 0.3s ease, transform 0.2s ease;
+            position: relative;
+            padding-bottom: 5px;
+        }
+        .navbar-nav a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 50%;
+            background-color: #40e38f;
+            transition: width 0.3s ease, left 0.3s ease;
+        }
+        .navbar-nav a:hover {
+            color: #eaf206;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+        .navbar-nav a:hover::after {
+            width: 100%;
+            left: 0;
+        }
+        /* Navbar button style for Admin link */
+        .navbar .button-link {
+            background: linear-gradient(45deg, #a73f28, #ef0505);
+            color: rgb(255, 255, 6);
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+            margin-left: 2.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(240, 61, 1, 0.3);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .navbar .button-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: skewX(-20deg);
+            transition: all 0.4s ease;
+            z-index: -1;
+        }
+        .navbar .button-link:hover::before {
+            left: 100%;
+        }
+        .navbar .button-link:hover {
+            background: linear-gradient(45deg, #f52202, #f07b06);
+            box-shadow: 0 8px 20px rgba(40, 167, 69, 0.4);
+            transform: translateY(-3px);
+        }
+        .navbar .button-link:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(40, 167, 69, 0.2);
+        }
+
+        /* Main Content Area */
+        .content {
+            flex: 1;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 2rem auto;
+            background-color: #2a2a2a;
+            color: #e0e0e0;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        }
+
+        /* Textarea styling */
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #444;
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            font-size: 1rem;
+            min-height: 200px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            background-color: #1e1e1e;
+            color: #00FF00;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        textarea:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
+            outline: none;
+        }
+
+        /* Generic Button Link Styles */
+        .button-link {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2);
+        }
+        .button-link:hover {
+            background: linear-gradient(45deg, #0056b3, #007bff);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 123, 255, 0.3);
+            text-decoration: none;
+        }
+        .button-link:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 123, 255, 0.1);
+        }
+        /* Specific button colors */
+        .button-link.primary { background: linear-gradient(45deg, #00ff33, #0056b3); }
+        .button-link.primary:hover { background: linear-gradient(45deg, #03acfa, #05de58); }
+        .button-link.secondary { background: linear-gradient(45deg, #6c757d, #5a6268); }
+        .button-link.secondary:hover { background: linear-gradient(45deg, #5a6268, #6c757d); }
+        .button-link.success { background: linear-gradient(45deg, #28a745, #218838); }
+        .button-link.success:hover { background: linear-gradient(45deg, #218838, #28a745); }
+        .button-link.danger { background: linear-gradient(45deg, #dc3545, #c82333); }
+        .button-link.danger:hover { background: linear-gradient(45deg, #c82333, #dc3545); }
+
+        /* Messages */
+        .message {
+            text-align: center;
+            margin-top: 15px;
+            font-weight: bold;
+            padding: 10px 15px;
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            transform: translateY(10px);
+        }
+        .message.hidden {
+            display: none;
+        }
+        .message:not(.hidden) {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .loading-message {
+            background-color: #333;
+            color: #4CAF50;
+            border: 1px solid #4CAF50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+        }
+        .error-message {
+            background-color: #442222;
+            color: #FF5252;
+            border: 1px solid #FF5252;
+            box-shadow: 0 0 10px rgba(255, 82, 82, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 1rem 1.5rem;
+            }
+            .navbar-brand {
+                margin-bottom: 15px;
+            }
+            .navbar-nav {
+                flex-direction: column;
+                align-items: flex-start;
+                width: 100%;
+            }
+            .navbar-nav a, .navbar-nav .button-link {
+                margin: 8px 0;
+                width: 100%;
+                text-align: left;
+                padding: 12px 15px;
+            }
+            .navbar-nav a::after {
+                width: 100%;
+                left: 0;
+            }
+            .navbar .button-link {
+                margin-left: 0;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+            }
+            .content {
+                padding: 1.5rem;
+                margin: 1.5rem auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="{% url 'scp4:home' %}" class="navbar-brand">CODE SCAN</a>
+        <div class="navbar-nav">
+            {% if user.is_authenticated %}
+                {% if user.is_staff %}
+                    <a href="{% url 'admin:index' %}" class="button-link">⚙️ Admin</a>
+                {% endif %}
+                <a href="{% url 'scp4:index' %}">🧠 Analyze</a>
+                <a href="{% url 'logout' %}">🚪 Logout</a>
+            {% else %}
+                <a href="{% url 'login' %}">🔐 Login</a>
+                <a href="{% url 'scp4:signup' %}">📝 สมัครสมาชิก</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <main class="content">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,84 @@
+{% comment %} 
+This template is used by analyze_code_api to render the analysis result HTML fragment.
+It expects 'scan_result', 'code', 'raw_output_text', 'ollama_error', 'no_vuln_found', and 'vulnerabilities' in its context.
+{% endcomment %}
+
+<div class="analysis-card">
+    {% if ollama_error %}
+        <div class="analysis-error-section">
+            <h3 class="error-title">⚠️ เกิดข้อผิดพลาดกับ AI</h3>
+            <p class="error-message">{{ raw_output_text|escape }}</p>
+        </div>
+    {% elif scan_result %}
+        <div class="analysis-header">
+            <h3 class="section-title">ผลการวิเคราะห์โค้ด</h3>
+            <p class="scan-timestamp">สแกนเมื่อ: {{ scan_result.scanned_at|date:"d M Y H:i:s" }}</p>
+        </div>
+
+        <div class="code-reviewed-section">
+            <h4 class="section-subtitle">โค้ดที่ส่งวิเคราะห์:</h4>
+            <pre class="code-display">{{ code|escape }}</pre>
+        </div>
+
+        <div class="analysis-results-section">
+            <h4 class="section-subtitle">ผลการวิเคราะห์:</h4>
+
+            {% if no_vuln_found %}
+                <div class="vulnerability-summary safe-code" style="background-color: #d4edda; color: #155724; padding: 15px; border-radius: 8px; border: 1px solid #c3e6cb;">
+                    <h5 class="summary-title">✅ ปลอดภัย!</h5>
+                    <p class="summary-description">AI ไม่พบช่องโหว่หรือความเสี่ยงด้านความปลอดภัยที่สำคัญในโค้ดนี้</p>
+                    <p class="disclaimer" style="font-size: 0.85em; color: #6c757d;">
+                        <small>หมายเหตุ: นี่คือการวิเคราะห์จาก AI และไม่ได้รับประกันความปลอดภัย 100% โปรดตรวจสอบโค้ดด้วยตนเองอีกครั้ง</small>
+                    </p>
+                </div>
+            {% else %}
+                {% if vulnerabilities %} 
+                    <div class="vulnerabilities-list">
+                        {% for vuln in vulnerabilities %}
+                            <div class="vulnerability-item" style="border: 1px solid #ddd; border-left: 6px solid 
+                                {% if vuln.severity == 'Critical' %} #dc3545
+                                {% elif vuln.severity == 'High' %} #e55353
+                                {% elif vuln.severity == 'Medium' %} #ffc107
+                                {% elif vuln.severity == 'Low' %} #17a2b8
+                                {% else %} #6c757d
+                                {% endif %};
+                                padding: 10px 15px; margin-bottom: 15px; border-radius: 5px;">
+                                <h5 class="vuln-heading" style="margin-top: 0;">
+                                    {{ vuln.name }}
+                                    <span class="severity-badge" style="background-color: 
+                                        {% if vuln.severity == 'Critical' %} #dc3545
+                                        {% elif vuln.severity == 'High' %} #e55353
+                                        {% elif vuln.severity == 'Medium' %} #ffc107; color: #212529
+                                        {% elif vuln.severity == 'Low' %} #17a2b8
+                                        {% else %} #6c757d
+                                        {% endif %};
+                                        color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; margin-left: 10px;">
+                                        {{ vuln.severity }}
+                                    </span>
+                                </h5>
+                                <p class="vuln-detail"><strong>รายละเอียด:</strong> {{ vuln.description }}</p>
+                                <p class="vuln-remediation"><strong>วิธีแก้ไข:</strong> {{ vuln.remediation }}</p>
+                                {% if vuln.code_snippet %}
+                                    <div class="vuln-code-snippet" style="background: #f8f9fa; border-radius: 5px; padding: 10px; margin-top: 10px;">
+                                        <p><strong>โค้ดที่เกี่ยวข้อง:</strong></p>
+                                        <pre class="code-display" style="overflow-x: auto;">{{ vuln.code_snippet|escape }}</pre>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="vulnerability-summary raw-output-fallback" style="background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba;">
+                        <h5 class="summary-title">ℹ️ ผลลัพธ์จาก AI (ดิบ):</h5>
+                        <p class="summary-description">เนื่องจากไม่พบช่องโหว่เฉพาะ หรือการวิเคราะห์ไม่ได้ให้รูปแบบที่ชัดเจน ผลลัพธ์ดิบจาก AI จึงถูกแสดงดังนี้:</p>
+                        <pre class="raw-output-display" style="white-space: pre-wrap; background: #fff; border-radius: 5px; padding: 10px; overflow-x: auto;">{{ raw_output_text|escape }}</pre>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="no-data-message" style="text-align: center; color: #6c757d; margin-top: 30px;">
+            <p>ไม่มีข้อมูลผลการวิเคราะห์ที่จะแสดง</p>
+        </div>
+    {% endif %}
+</div>
