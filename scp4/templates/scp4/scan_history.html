@@ -1,0 +1,414 @@
+{% extends 'scp4/base.html' %}
+{% load static %}
+
+{% block title %}ประวัติการวิเคราะห์ช่องโหว่ทั้งหมด - Code Scan Pro{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* CSS Variables for Dark Theme */
+    :root {
+        --primary-color: #4CAF50;
+        --secondary-color: #6c757d;
+        --background-main: #121212;
+        --background-container: #1e1e1e;
+        --text-color: #f0f0f0;
+        --border-color: #444;
+        --container-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+        --item-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+
+        --critical-color: #dc3545;
+        --high-color: #e55353;
+        --medium-color: #ffc107;
+        --low-color: #17a2b8;
+        --safe-color: #28a745;
+    }
+
+    body {
+        background-color: var(--background-main);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .container {
+        max-width: 1000px;
+        margin: auto;
+        background-color: var(--background-container);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: var(--container-shadow);
+        color: var(--text-color);
+    }
+    
+    .top-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+    
+    .back-button, .scan-new-button {
+        background-color: transparent;
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        padding: 10px 20px;
+        border-radius: 20px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+    }
+    
+    .back-button:hover {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+        color: #fff;
+        transform: translateY(-2px);
+    }
+    
+    .scan-new-button {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: #fff;
+    }
+    
+    .scan-new-button:hover {
+        background-color: #45a049;
+        box-shadow: 0 4px 10px rgba(76, 175, 80, 0.4);
+        transform: translateY(-2px);
+    }
+    
+    .back-button svg, .scan-new-button svg {
+        margin-right: 8px;
+    }
+    
+    .page-header {
+        text-align: center;
+        margin-bottom: 30px;
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 20px;
+    }
+    
+    .page-title {
+        font-size: 2.5em;
+        color: var(--primary-color);
+        margin: 0;
+        font-weight: 600;
+    }
+    
+    .total-count {
+        color: var(--secondary-color);
+        margin-top: 10px;
+        font-size: 1.1em;
+    }
+    
+    .scan-history-list {
+        margin-top: 20px;
+    }
+    
+    .scan-history-item {
+        background-color: #2a2a2a;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-left: 4px solid var(--primary-color);
+    }
+
+    .scan-history-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .scan-info {
+        display: flex;
+        align-items: center;
+        flex-grow: 1;
+    }
+
+    .scan-icon {
+        width: 50px;
+        height: 50px;
+        background-color: var(--primary-color);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 20px;
+        flex-shrink: 0;
+    }
+
+    .scan-details {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+    }
+
+    .scan-date {
+        font-weight: 600;
+        font-size: 1.2em;
+        color: var(--text-color);
+        margin-bottom: 5px;
+    }
+    
+    .scan-status {
+        font-size: 1em;
+        color: var(--secondary-color);
+    }
+    
+    .status-found {
+        color: var(--critical-color);
+        font-weight: 500;
+    }
+    
+    .status-safe {
+        color: var(--safe-color);
+        font-weight: 500;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+
+    .action-button {
+        padding: 10px 18px;
+        border-radius: 20px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        cursor: pointer;
+        font-size: 0.9em;
+    }
+
+    .action-button.view {
+        background-color: #0d6efd;
+        color: white;
+    }
+
+    .action-button.view:hover {
+        background-color: #0b5ed7;
+        transform: scale(1.05);
+    }
+
+    .action-button.pdf {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .action-button.pdf:hover {
+        background-color: #bb2d3b;
+        transform: scale(1.05);
+    }
+
+    .action-button.delete-button {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .action-button.delete-button:hover {
+        background-color: #5c636a;
+        transform: scale(1.05);
+    }
+
+    .action-button svg {
+        margin-right: 6px;
+    }
+
+    .no-data-message {
+        text-align: center;
+        color: #888;
+        margin-top: 80px;
+        font-size: 1.5em;
+        font-style: italic;
+        background-color: #2a2a2a;
+        padding: 40px;
+        border-radius: 12px;
+    }
+    
+    .no-data-message svg {
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+    
+    /* Pagination styles */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 30px;
+        gap: 10px;
+    }
+    
+    .pagination a, .pagination span {
+        padding: 10px 15px;
+        background-color: #2a2a2a;
+        color: var(--text-color);
+        text-decoration: none;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+    }
+    
+    .pagination a:hover {
+        background-color: var(--primary-color);
+    }
+    
+    .pagination .current {
+        background-color: var(--primary-color);
+        font-weight: bold;
+    }
+
+    /* Messages styles */
+    .messages {
+        margin-bottom: 20px;
+    }
+
+    .messages .alert {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        font-weight: 500;
+    }
+
+    .messages .alert-success {
+        background-color: #2e4a30;
+        color: #92e092;
+        border: 1px solid #3b633b;
+    }
+
+    .messages .alert-error {
+        background-color: #4f2222;
+        color: #ff8b8b;
+        border: 1px solid #6d2f2f;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Messages -->
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="top-actions">
+        <a href="{% url 'scp4:index' %}" class="back-button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5a.5.5 0 0 0 .5-.5z"/>
+            </svg>
+            <span>กลับหน้าหลัก</span>
+        </a>
+        
+        <a href="{% url 'scp4:index' %}" class="scan-new-button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+            </svg>
+            <span>สแกนใหม่</span>
+        </a>
+    </div>
+
+    <div class="page-header">
+        <h1 class="page-title">📋 ประวัติการวิเคราะห์ทั้งหมด</h1>
+        <p class="total-count">รวมทั้งหมด: {{ total_scans }} รายการ</p>
+    </div>
+
+    {% if all_scans %}
+        <div class="scan-history-list">
+            {% for scan in all_scans %}
+                <div class="scan-history-item">
+                    <div class="scan-info">
+                        <div class="scan-icon">
+                            {% if scan.vulnerabilities.count > 0 %}
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 16 16">
+                                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.91.933l-.111 2.923c-.042 1.05-.157 1.442-.423 1.442-.267 0-.38-.392-.422-1.442L7.09 5.933C7.046 5.462 7.465 5 8 5m0 5.5a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4"/>
+                                </svg>
+                            {% else %}
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 16 16">
+                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.47l-1.637-1.636a.75.75 0 1 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                </svg>
+                            {% endif %}
+                        </div>
+                        <div class="scan-details">
+                            <span class="scan-date">{{ scan.scanned_at|date:"d M Y H:i:s" }}</span>
+                            <span class="scan-status {% if scan.vulnerabilities.count > 0 %}status-found{% else %}status-safe{% endif %}">
+                                {% if scan.vulnerabilities.count > 0 %}
+                                    ⚠️ พบช่องโหว่: {{ scan.vulnerabilities.count }} รายการ
+                                {% else %}
+                                    ✅ ไม่พบช่องโหว่
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <a href="{% url 'scp4:view_scan_result' scan.id %}" class="action-button view">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
+                                <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>
+                            </svg>
+                            View Details
+                        </a>
+                        <a href="{% url 'scp4:export_scan_report_pdf' scan.id %}" target="_blank" class="action-button pdf">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+                                <path d="M4.603 14.823 5.47 15.09c.394.175.718.165 1.022.134L9.374 15.095c.33-.04.66-.17.945-.398l.927-.846c.322-.294.5-.66.5-1.067v-.73c0-.449-.27-.84-.67-1.084L9.728 10.07c-.26-.154-.57-.22-.882-.183l-2.658.33c-.328.04-.66.17-.948.398l-.927.846c-.322.294-.5-.66.5-1.067v-.73c0-.449.27-.84.67-1.084l1.348-.906z"/>
+                            </svg>
+                            Export PDF
+                        </a>
+                        <a href="{% url 'scp4:delete_scan_result' scan.id %}" class="action-button delete-button">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3h11V2h-11v1z"/>
+                            </svg>
+                            Delete
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if all_scans.has_other_pages %}
+            <div class="pagination">
+                {% if all_scans.has_previous %}
+                    <a href="?page=1">&laquo; แรก</a>
+                    <a href="?page={{ all_scans.previous_page_number }}">ก่อนหน้า</a>
+                {% endif %}
+                
+                <span class="current">
+                    หน้า {{ all_scans.number }} จาก {{ all_scans.paginator.num_pages }}
+                </span>
+                
+                {% if all_scans.has_next %}
+                    <a href="?page={{ all_scans.next_page_number }}">ถัดไป</a>
+                    <a href="?page={{ all_scans.paginator.num_pages }}">สุดท้าย &raquo;</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="no-data-message">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M2.5 3A1.5 1.5 0 0 0 1 4.5v.793c.026.009.051.02.076.032L7.674 8.51c.206.1.446.1.652 0l6.598-3.185A.755.755 0 0 1 15 5.293V4.5A1.5 1.5 0 0 0 13.5 3h-11Z"/>
+                <path d="M15 6.954 8.978 9.86a2.25 2.25 0 0 1-1.956 0L1 6.954V11.5A1.5 1.5 0 0 0 2.5 13h11a1.5 1.5 0 0 0 1.5-1.5V6.954Z"/>
+            </svg>
+            <p>ยังไม่มีประวัติการสแกน</p>
+            <p style="font-size: 1.2em; color: #666; margin-top: 10px;">
+                <a href="{% url 'scp4:index' %}" style="color: var(--primary-color); text-decoration: none;">
+                    เริ่มต้นสแกนโค้ดแรกของคุณ →
+                </a>
+            </p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

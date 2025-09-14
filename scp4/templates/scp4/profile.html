@@ -1,0 +1,558 @@
+{% extends "scp4/base.html" %}
+{% load static %}
+
+{% block title %}จัดการข้อมูลส่วนตัว - AI Code Security Analyzer{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Profile Page Specific Styling */
+.profile-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.profile-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, #1e1e1e 0%, #252525 100%);
+    border-radius: 16px;
+    border: 1px solid #333;
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #4caf50, #2196f3);
+}
+
+.profile-title {
+    font-size: 2.2em;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    background: linear-gradient(135deg, #4caf50 0%, #2196f3 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.profile-subtitle {
+    color: #888;
+    font-size: 1.1em;
+    margin: 0;
+}
+
+.profile-avatar-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 2rem 0;
+    gap: 2rem;
+}
+
+.profile-avatar-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4caf50, #2196f3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 8px 24px rgba(76, 175, 80, 0.3);
+}
+
+.avatar-info h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5em;
+    color: #ffffff;
+}
+
+.avatar-info p {
+    margin: 0;
+    color: #888;
+    font-size: 1em;
+}
+
+/* Form Cards */
+.form-card {
+    background: linear-gradient(135deg, #1e1e1e 0%, #252525 100%);
+    border: 1px solid #333;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s ease;
+}
+
+.form-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.card-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #333;
+}
+
+.card-title {
+    font-size: 1.4em;
+    font-weight: 600;
+    color: #4caf50;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-description {
+    color: #888;
+    font-size: 0.95em;
+    margin: 0.5rem 0 0 0;
+}
+
+/* Form Styling */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: #e0e0e0;
+    margin-bottom: 0.5rem;
+    font-size: 0.95em;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 2px solid #333;
+    border-radius: 8px;
+    background: #1a1a1a;
+    color: #e0e0e0;
+    font-size: 0.95em;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #4caf50;
+    box-shadow: 0 0 12px rgba(76, 175, 80, 0.3);
+}
+
+.form-input:disabled {
+    background: #2a2a2a;
+    color: #666;
+    cursor: not-allowed;
+}
+
+.form-input.readonly {
+    background: #2a2a2a;
+    color: #999;
+    cursor: not-allowed;
+}
+
+.form-help-text {
+    font-size: 0.85em;
+    color: #888;
+    margin-top: 0.3rem;
+}
+
+/* Button Styling */
+.btn {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #4caf50, #66bb6a);
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+    background: linear-gradient(135deg, #66bb6a, #4caf50);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #2196f3, #42a5f5);
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+    background: linear-gradient(135deg, #42a5f5, #2196f3);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #f44336, #ff6b6b);
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+    background: linear-gradient(135deg, #ff6b6b, #f44336);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #333;
+}
+
+/* Statistics Cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #1e1e1e 0%, #252525 100%);
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+.stat-number {
+    font-size: 2em;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.stat-number.safe { color: #4caf50; }
+.stat-number.warning { color: #ff9800; }
+.stat-number.danger { color: #f44336; }
+
+.stat-label {
+    color: #888;
+    font-size: 0.9em;
+    margin: 0;
+}
+
+/* Alert Messages */
+.alert {
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+}
+
+.alert-success {
+    background: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    color: #4caf50;
+}
+
+.alert-error {
+    background: rgba(244, 67, 54, 0.1);
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    color: #f44336;
+}
+
+.alert-info {
+    background: rgba(33, 150, 243, 0.1);
+    border: 1px solid rgba(33, 150, 243, 0.3);
+    color: #2196f3;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .profile-container {
+        padding: 0 0.5rem;
+    }
+
+    .form-card {
+        padding: 1.5rem;
+    }
+
+    .profile-avatar-section {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .btn {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-title {
+        font-size: 1.8em;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card {
+        padding: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <h1 class="profile-title">จัดการข้อมูลส่วนตัว</h1>
+        <p class="profile-subtitle">จัดการและอัปเดตข้อมูลบัญชีของคุณ</p>
+        
+        <div class="profile-avatar-section">
+            <div class="profile-avatar-large">
+                {{ user.username|slice:":1"|upper }}
+            </div>
+            <div class="avatar-info">
+                <h3>{{ user.get_full_name|default:user.username }}</h3>
+                <p>สมาชิกตั้งแต่ {{ user.date_joined|date:"d M Y" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Statistics -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number safe">{{ total_scans|default:0 }}</div>
+            <p class="stat-label">การสแกนทั้งหมด</p>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number warning">{{ total_vulnerabilities|default:0 }}</div>
+            <p class="stat-label">ช่องโหว่ที่พบ</p>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number danger">{{ high_risk_count|default:0 }}</div>
+            <p class="stat-label">ความเสี่ยงสูง</p>
+        </div>
+    </div>
+
+    <!-- Personal Information Form -->
+    <div class="form-card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <span>👤</span>
+                ข้อมูลส่วนตัว
+            </h2>
+            <p class="card-description">อัปเดตข้อมูลพื้นฐานของบัญชี</p>
+        </div>
+
+        <form method="post" action="{% url 'scp4:update_profile' %}">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="username" class="form-label">ชื่อผู้ใช้</label>
+                <input type="text" id="username" name="username" class="form-input readonly" 
+                       value="{{ user.username }}" readonly>
+                <div class="form-help-text">ชื่อผู้ใช้ไม่สามารถเปลี่ยนแปลงได้</div>
+            </div>
+
+            <div class="form-group">
+                <label for="first_name" class="form-label">ชื่อจริง</label>
+                <input type="text" id="first_name" name="first_name" class="form-input" 
+                       value="{{ user.first_name|default:'' }}" placeholder="กรุณาใส่ชื่อจริง">
+            </div>
+
+            <div class="form-group">
+                <label for="last_name" class="form-label">นามสกุล</label>
+                <input type="text" id="last_name" name="last_name" class="form-input" 
+                       value="{{ user.last_name|default:'' }}" placeholder="กรุณาใส่นามสกุล">
+            </div>
+
+            <div class="form-group">
+                <label for="email" class="form-label">อีเมล</label>
+                <input type="email" id="email" name="email" class="form-input" 
+                       value="{{ user.email|default:'' }}" placeholder="example@domain.com">
+                <div class="form-help-text">ใช้สำหรับการติดต่อและการแจ้งเตือน</div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <span>💾</span> บันทึกการเปลี่ยนแปลง
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Change Password Form -->
+    <div class="form-card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <span>🔐</span>
+                เปลี่ยนรหัสผ่าน
+            </h2>
+            <p class="card-description">อัปเดตรหัสผ่านของคุณเพื่อความปลอดภัย</p>
+        </div>
+
+        <form method="post" action="{% url 'scp4:change_password' %}">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="current_password" class="form-label">รหัสผ่านปัจจุบัน</label>
+                <input type="password" id="current_password" name="current_password" 
+                       class="form-input" required>
+            </div>
+
+            <div class="form-group">
+                <label for="new_password1" class="form-label">รหัสผ่านใหม่</label>
+                <input type="password" id="new_password1" name="new_password1" 
+                       class="form-input" required>
+                <div class="form-help-text">รหัสผ่านควรมีความยาวอย่างน้อย 8 ตัวอักษร</div>
+            </div>
+
+            <div class="form-group">
+                <label for="new_password2" class="form-label">ยืนยันรหัสผ่านใหม่</label>
+                <input type="password" id="new_password2" name="new_password2" 
+                       class="form-input" required>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-secondary">
+                    <span>🔄</span> เปลี่ยนรหัสผ่าน
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Account Actions -->
+    <div class="form-card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <span>⚙️</span>
+                การจัดการบัญชี
+            </h2>
+            <p class="card-description">การดำเนินการอื่นๆ สำหรับบัญชีของคุณ</p>
+        </div>
+
+        <div class="form-actions" style="border: none; padding: 0; margin: 0;">
+            <a href="{% url 'scp4:scan_history' %}" class="btn btn-secondary">
+                <span>📊</span> ดูประวัติการสแกน
+            </a>
+            <a href="{% url 'scp4:export_all_data' %}" class="btn btn-secondary">
+                <span>📄</span> ส่งออกข้อมูลทั้งหมด
+            </a>
+            <button type="button" class="btn btn-danger" onclick="confirmDeleteAccount()">
+                <span>🗑️</span> ลบบัญชี
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Account Confirmation Modal (Simple) -->
+<div id="deleteModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center;">
+    <div style="background: #242424; padding: 2rem; border-radius: 12px; max-width: 400px; text-align: center;">
+        <h3 style="color: #f44336; margin-top: 0;">⚠️ ยืนยันการลบบัญชี</h3>
+        <p style="color: #e0e0e0; margin: 1rem 0;">การดำเนินการนี้ไม่สามารถย้อนกลับได้ ข้อมูลทั้งหมดจะถูกลบอย่างถาวร</p>
+        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
+            <button onclick="hideDeleteModal()" class="btn btn-secondary">ยกเลิก</button>
+            <form method="post" action="{% url 'scp4:delete_account' %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">ลบบัญชี</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function confirmDeleteAccount() {
+    document.getElementById('deleteModal').style.display = 'flex';
+}
+
+function hideDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+}
+
+// Close modal on escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        hideDeleteModal();
+    }
+});
+
+// Close modal on outside click
+document.getElementById('deleteModal').addEventListener('click', function(event) {
+    if (event.target === this) {
+        hideDeleteModal();
+    }
+});
+
+// Form validation
+document.addEventListener('DOMContentLoaded', function() {
+    const passwordForm = document.querySelector('form[action*="change_password"]');
+    if (passwordForm) {
+        passwordForm.addEventListener('submit', function(event) {
+            const newPassword1 = document.getElementById('new_password1').value;
+            const newPassword2 = document.getElementById('new_password2').value;
+            
+            if (newPassword1 !== newPassword2) {
+                event.preventDefault();
+                alert('รหัสผ่านใหม่ไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง');
+                return false;
+            }
+            
+            if (newPassword1.length < 8) {
+                event.preventDefault();
+                alert('รหัสผ่านควรมีความยาวอย่างน้อย 8 ตัวอักษร');
+                return false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

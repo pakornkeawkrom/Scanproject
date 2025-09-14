@@ -1,0 +1,447 @@
+{% extends "scp4/base.html" %}
+{% load static %}
+
+{% block title %}ข้อมูลระบบ - ผู้ดูแลระบบ{% endblock %}
+
+{% block extra_head %}
+<style>
+.admin-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #1e1e1e 0%, #252525 100%);
+    border-radius: 12px;
+    border: 1px solid #333;
+}
+
+.admin-title {
+    font-size: 1.8em;
+    font-weight: 600;
+    margin: 0;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #888;
+    font-size: 0.9em;
+}
+
+.breadcrumb a {
+    color: #9c27b0;
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    color: #e91e63;
+}
+
+/* Navigation */
+.admin-nav {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+    background: rgba(30, 30, 30, 0.8);
+    border-radius: 12px;
+    padding: 0.5rem;
+    gap: 0.25rem;
+}
+
+.admin-nav-item {
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #888;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-nav-item:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.admin-nav-item.active {
+    background: linear-gradient(135deg, #9c27b0, #e91e63);
+    color: white;
+}
+
+/* Security Analytics Cards */
+.security-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.security-card {
+    background: linear-gradient(135deg, #1e1e1e 0%, #252525 100%);
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.security-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--status-color, #4caf50);
+}
+
+.security-card:hover {
+    transform: translateY(-3px);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.card-icon {
+    font-size: 2em;
+    color: var(--status-color, #4caf50);
+}
+
+.card-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0.5rem 0;
+}
+
+.card-value {
+    font-size: 2em;
+    font-weight: 700;
+    color: var(--status-color, #4caf50);
+    margin-bottom: 0.5rem;
+}
+
+.card-description {
+    color: #888;
+    font-size: 0.9em;
+    margin: 0;
+}
+
+/* System Information Grid */
+.system-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.info-card {
+    background: linear-gradient(135deg, #1e1e1e 0%, #252525 100%);
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.info-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #333;
+}
+
+.info-title {
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.info-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #333;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: #b0b0b0;
+    font-weight: 500;
+}
+
+.info-value {
+    color: #ffffff;
+    font-weight: 600;
+    text-align: right;
+}
+
+.info-value.success { color: #4caf50; }
+.info-value.warning { color: #ff9800; }
+.info-value.error { color: #f44336; }
+.info-value.info { color: #2196f3; }
+
+/* Quick Links */
+.quick-links {
+    background: linear-gradient(135deg, #1e1e1e 0%, #252525 100%);
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.quick-link {
+    background: rgba(30, 30, 30, 0.8);
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 1rem;
+    color: #ffffff;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.quick-link:hover {
+    background: rgba(60, 60, 60, 0.8);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    color: #ffffff;
+}
+
+.link-icon {
+    font-size: 1.5em;
+}
+
+.link-text {
+    font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .system-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-container {
+        padding: 1rem;
+    }
+    
+    .admin-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .admin-nav {
+        flex-wrap: wrap;
+    }
+    
+    .security-overview {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <!-- Header -->
+    <div class="admin-header">
+        <div>
+            <h1 class="admin-title">⚙️ System information</h1>
+            <div class="breadcrumb">
+                <a href="{% url 'scp4:custom_admin' %}">Dashboard</a> > ระบบ
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="admin-nav">
+        <a href="{% url 'scp4:custom_admin' %}" class="admin-nav-item">
+            📊 Dashboard
+        </a>
+        <a href="{% url 'scp4:admin_users' %}" class="admin-nav-item">
+            👥 Users
+        </a>
+        <a href="{% url 'scp4:admin_scans' %}" class="admin-nav-item">
+            🔍 Scans
+        </a>
+        <a href="{% url 'scp4:admin_system' %}" class="admin-nav-item active">
+            ⚙️ System
+        </a>
+    </div>
+
+    <!-- Security Analytics Overview -->
+    <div class="security-overview">
+        <div class="security-card" style="--status-color: {% if total_vulnerabilities > 100 %}#f44336{% elif total_vulnerabilities > 50 %}#ff9800{% else %}#4caf50{% endif %};">
+            <div class="card-header">
+                <span class="card-icon">🛡️</span>
+            </div>
+            <h3 class="card-title">ช่องโหว่ทั้งหมด</h3>
+            <div class="card-value">{{ total_vulnerabilities|default:0 }}</div>
+            <p class="card-description">ช่องโหว่ที่พบจากการสแกนทั้งหมด</p>
+        </div>
+
+        <div class="security-card" style="--status-color: {% if critical_vulnerabilities > 10 %}#f44336{% elif critical_vulnerabilities > 5 %}#ff9800{% else %}#4caf50{% endif %};">
+            <div class="card-header">
+                <span class="card-icon">🚨</span>
+            </div>
+            <h3 class="card-title">ช่องโหว่ Critical</h3>
+            <div class="card-value">{{ critical_vulnerabilities|default:0 }}</div>
+            <p class="card-description">ต้องแก้ไขด่วน</p>
+        </div>
+
+        <div class="security-card" style="--status-color: {% if total_scans > 1000 %}#4caf50{% elif total_scans > 500 %}#ff9800{% else %}#2196f3{% endif %};">
+            <div class="card-header">
+                <span class="card-icon">🔍</span>
+            </div>
+            <h3 class="card-title">การสแกนทั้งหมด</h3>
+            <div class="card-value">{{ total_scans|default:0 }}</div>
+            <p class="card-description">จำนวนการสแกนที่ทำในระบบ</p>
+        </div>
+
+        <div class="security-card" style="--status-color: {% if total_users > 100 %}#4caf50{% elif total_users > 50 %}#ff9800{% else %}#2196f3{% endif %};">
+            <div class="card-header">
+                <span class="card-icon">👥</span>
+            </div>
+            <h3 class="card-title">ผู้ใช้งาน</h3>
+            <div class="card-value">{{ total_users|default:0 }}</div>
+            <p class="card-description">ผู้ใช้งานทั้งหมดในระบบ</p>
+        </div>
+    </div>
+
+    <!-- System Information Grid -->
+    <div class="system-grid">
+        <!-- Application Information -->
+        <div class="info-card">
+            <div class="info-header">
+                <h3 class="info-title">🚀 ข้อมูลแอปพลิเคชัน</h3>
+            </div>
+            <ul class="info-list">
+                <li class="info-item">
+                    <span class="info-label">เวอร์ชัน Django</span>
+                    <span class="info-value info">{{ django_version|default:"Django 4.2" }}</span>
+                </li>
+                <li class="info-item">
+                    <span class="info-label">เวอร์ชัน Python</span>
+                    <span class="info-value info">{{ python_version|default:"Python 3.11" }}</span>
+                </li>
+                <li class="info-item">
+                    <span class="info-label">โหมด Debug</span>
+                    <span class="info-value {% if debug_mode %}error{% else %}success{% endif %}">
+                        {{ debug_mode|yesno:"เปิดใช้,ปิดใช้" }}
+                    </span>
+                </li>
+                <li class="info-item">
+                    <span class="info-label">ฐานข้อมูล</span>
+                    <span class="info-value success">{{ database_engine|default:"SQLite" }}</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Security Statistics -->
+        <div class="info-card">
+            <div class="info-header">
+                <h3 class="info-title">🔒 สถิติความปลอดภัย</h3>
+            </div>
+            <ul class="info-list">
+                <li class="info-item">
+                    <span class="info-label">ช่องโหว่ Critical</span>
+                    <span class="info-value error">{{ critical_vulnerabilities|default:0 }}</span>
+                </li>
+                <li class="info-item">
+                    <span class="info-label">ช่องโหว่ High</span>
+                    <span class="info-value warning">{{ high_vulnerabilities|default:0 }}</span>
+                </li>
+                <li class="info-item">
+                    <span class="info-label">ช่องโหว่ Medium</span>
+                    <span class="info-value warning">{{ medium_vulnerabilities|default:0 }}</span>
+                </li>
+                <li class="info-item">
+                    <span class="info-label">การสแกนใน 7 วัน</span>
+                    <span class="info-value info">{{ recent_scans|default:0 }}</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="quick-links">
+        <div class="info-header">
+            <h3 class="info-title">🔗 ลิงก์ด่วน</h3>
+        </div>
+        <div class="links-grid">
+            <a href="{% url 'admin:index' %}" class="quick-link">
+                <span class="link-icon">🔧</span>
+                <span class="link-text">Django Admin</span>
+            </a>
+            <a href="{% url 'scp4:admin_scans' %}" class="quick-link">
+                <span class="link-icon">📊</span>
+                <span class="link-text">View scan report</span>
+            </a>
+            <a href="{% url 'scp4:admin_users' %}" class="quick-link">
+                <span class="link-icon">👥</span>
+                <span class="link-text">Manage users</span>
+            </a>
+            <a href="{% url 'scp4:index' %}" class="quick-link">
+                <span class="link-icon">🔍</span>
+                <span class="link-text">Scan Codes</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+console.log('Admin System Dashboard loaded');
+</script>
+{% endblock %}

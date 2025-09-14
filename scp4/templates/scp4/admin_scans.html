@@ -1,0 +1,686 @@
+{% extends "scp4/base.html" %}
+{% load static %}
+
+{% block title %}จัดการการสแกน - ผู้ดูแลระบบ{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Admin Scans Specific Styling */
+.admin-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #1e1e1e 0%, #252525 100%);
+    border-radius: 12px;
+    border: 1px solid #333;
+}
+
+.admin-title {
+    font-size: 1.8em;
+    font-weight: 600;
+    margin: 0;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #888;
+    font-size: 0.9em;
+}
+
+.breadcrumb a {
+    color: #9c27b0;
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    color: #e91e63;
+}
+
+/* Navigation Tabs */
+.admin-nav {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+    background: rgba(30, 30, 30, 0.8);
+    border-radius: 12px;
+    padding: 0.5rem;
+    gap: 0.25rem;
+}
+
+.admin-nav-item {
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #888;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-nav-item:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.admin-nav-item.active {
+    background: linear-gradient(135deg, #9c27b0, #e91e63);
+    color: white;
+}
+
+/* Stats Cards */
+.scan-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #1e1e1e 0%, #252525 100%);
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-color, #4caf50);
+}
+
+.stat-icon {
+    font-size: 2em;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.stat-number {
+    font-size: 2em;
+    font-weight: 700;
+    color: var(--accent-color, #4caf50);
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    color: #888;
+    font-size: 0.9em;
+    margin: 0;
+}
+
+/* Filters Section */
+.filters-section {
+    background: linear-gradient(135deg, #1e1e1e 0%, #252525 100%);
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-label {
+    color: #b0b0b0;
+    font-size: 0.9em;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-input, .form-select {
+    padding: 0.75rem 1rem;
+    background: rgba(15, 15, 15, 0.8);
+    border: 1px solid #404040;
+    border-radius: 8px;
+    color: #e0e0e0;
+    font-size: 0.95rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-input:focus, .form-select:focus {
+    outline: none;
+    border-color: #9c27b0;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #9c27b0, #e91e63);
+    color: white;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e0e0e0;
+    border: 1px solid #404040;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Scans Table */
+.scans-table-container {
+    background: linear-gradient(135deg, #1e1e1e 0%, #252525 100%);
+    border: 1px solid #333;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.table-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.table-title {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+}
+
+.table-stats {
+    color: #888;
+    font-size: 0.9em;
+}
+
+.scans-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.scans-table thead {
+    background: rgba(30, 30, 30, 0.8);
+}
+
+.scans-table th,
+.scans-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #333;
+}
+
+.scans-table th {
+    color: #b0b0b0;
+    font-weight: 600;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.scans-table td {
+    color: #e0e0e0;
+}
+
+.scans-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.scans-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Scan Info */
+.scan-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.scan-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #2196f3, #1976d2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2em;
+}
+
+.scan-details h4 {
+    margin: 0;
+    font-size: 0.95em;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.scan-details p {
+    margin: 0;
+    font-size: 0.85em;
+    color: #888;
+}
+
+/* Severity Badges */
+.severity-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8em;
+    font-weight: 600;
+    text-align: center;
+    min-width: 60px;
+    text-transform: uppercase;
+}
+
+.severity-critical {
+    background: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+    border: 1px solid #f44336;
+}
+
+.severity-high {
+    background: rgba(255, 152, 0, 0.2);
+    color: #ff9800;
+    border: 1px solid #ff9800;
+}
+
+.severity-medium {
+    background: rgba(255, 235, 59, 0.2);
+    color: #ffeb3b;
+    border: 1px solid #ffeb3b;
+}
+
+.severity-low {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+    border: 1px solid #4caf50;
+}
+
+.severity-clean {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+    border: 1px solid #4caf50;
+}
+
+/* Vulnerability Count */
+.vuln-count {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.vuln-number {
+    font-size: 1.2em;
+    font-weight: 700;
+}
+
+.vuln-critical { color: #f44336; }
+.vuln-high { color: #ff9800; }
+.vuln-medium { color: #ffeb3b; }
+.vuln-low { color: #4caf50; }
+.vuln-clean { color: #4caf50; }
+
+.vuln-label {
+    font-size: 0.7em;
+    color: #888;
+    text-transform: uppercase;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.btn-small {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8em;
+    border-radius: 6px;
+}
+
+.btn-view {
+    background: linear-gradient(135deg, #2196f3, #1976d2);
+    color: white;
+}
+
+.btn-download {
+    background: linear-gradient(135deg, #4caf50, #388e3c);
+    color: white;
+}
+
+.btn-delete {
+    background: linear-gradient(135deg, #f44336, #d32f2f);
+    color: white;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #888;
+}
+
+.empty-icon {
+    font-size: 4em;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .scans-table {
+        font-size: 0.9em;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-container {
+        padding: 1rem;
+    }
+    
+    .admin-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .admin-nav {
+        flex-wrap: wrap;
+    }
+    
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-actions {
+        justify-content: center;
+    }
+    
+    .scans-table-container {
+        overflow-x: auto;
+    }
+    
+    .scans-table {
+        min-width: 900px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <!-- Header -->
+    <div class="admin-header">
+        <div>
+            <h1 class="admin-title">🔍 Manage Scans</h1>
+            <div class="breadcrumb">
+                <a href="{% url 'scp4:custom_admin' %}">Dashboard</a> > การสแกน
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="admin-nav">
+        <a href="{% url 'scp4:custom_admin' %}" class="admin-nav-item">
+            📊 Dashboard
+        </a>
+        <a href="{% url 'scp4:admin_users' %}" class="admin-nav-item">
+            👥 Users
+        </a>
+        <a href="{% url 'scp4:admin_scans' %}" class="admin-nav-item active">
+            🔍 Scans
+        </a>
+        <a href="{% url 'scp4:admin_system' %}" class="admin-nav-item">
+            ⚙️ System
+        </a>
+    </div>
+
+    <!-- Scan Statistics -->
+    <div class="scan-stats">
+        <div class="stat-card" style="--accent-color: #2196f3;">
+            <span class="stat-icon">🔍</span>
+            <div class="stat-number">{{ total_scans|default:0 }}</div>
+            <p class="stat-label">การสแกนทั้งหมด</p>
+        </div>
+        <div class="stat-card" style="--accent-color: #f44336;">
+            <span class="stat-icon">🚨</span>
+            <div class="stat-number">{{ critical_scans|default:0 }}</div>
+            <p class="stat-label">ปัญหาอันตราย</p>
+        </div>
+        <div class="stat-card" style="--accent-color: #ff9800;">
+            <span class="stat-icon">⚠️</span>
+            <div class="stat-number">{{ high_risk_scans|default:0 }}</div>
+            <p class="stat-label">ความเสี่ยงสูง</p>
+        </div>
+        <div class="stat-card" style="--accent-color: #4caf50;">
+            <span class="stat-icon">✅</span>
+            <div class="stat-number">{{ clean_scans|default:0 }}</div>
+            <p class="stat-label">สแกนสะอาด</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section">
+        <form method="get">
+            <div class="filters-grid">
+                <div class="form-group">
+                    <label class="form-label">ค้นหาผู้ใช้</label>
+                    <input type="text" 
+                           name="user_search" 
+                           class="form-input" 
+                           placeholder="ชื่อผู้ใช้หรืออีเมล..."
+                           value="{{ user_search }}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ระดับความรุนแรง</label>
+                    <select name="severity" class="form-select">
+                        <option value="">ทุกระดับ</option>
+                        <option value="critical" {% if severity == 'critical' %}selected{% endif %}>อันตราย</option>
+                        <option value="high" {% if severity == 'high' %}selected{% endif %}>สูง</option>
+                        <option value="medium" {% if severity == 'medium' %}selected{% endif %}>ปานกลาง</option>
+                        <option value="low" {% if severity == 'low' %}selected{% endif %}>ต่ำ</option>
+                        <option value="clean" {% if severity == 'clean' %}selected{% endif %}>สะอาด</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ช่วงเวลา</label>
+                    <select name="date_range" class="form-select">
+                        <option value="">ทุกช่วงเวลา</option>
+                        <option value="today" {% if date_range == 'today' %}selected{% endif %}>วันนี้</option>
+                        <option value="week" {% if date_range == 'week' %}selected{% endif %}>สัปดาห์นี้</option>
+                        <option value="month" {% if date_range == 'month' %}selected{% endif %}>เดือนนี้</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">
+                    🔍 ใช้ฟิลเตอร์
+                </button>
+                <a href="{% url 'scp4:admin_scans' %}" class="btn btn-secondary">
+                    🔄 ล้างทั้งหมด
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Scans Table -->
+    <div class="scans-table-container">
+        <div class="table-header">
+            <h3 class="table-title">ผลการสแกน</h3>
+            <div class="table-stats">
+                ทั้งหมด: {{ total_scans|default:0 }} รายการ
+                {% if user_search or severity or date_range %}(กรองแล้ว){% endif %}
+            </div>
+        </div>
+
+        <!-- แก้ไขแล้ว: ใช้ page_scans -->
+        {% if page_scans %}
+        <table class="scans-table">
+            <thead>
+                <tr>
+                    <th>ข้อมูลการสแกน</th>
+                    <th>ผู้ใช้</th>
+                    <th>วันที่</th>
+                    <th>ความรุนแรง</th>
+                    <th>ช่องโหว่</th>
+                    <th>สถานะ</th>
+                    <th>การจัดการ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for scan in page_scans %}
+                <tr>
+                    <td>
+                        <div class="scan-info">
+                            <div class="scan-icon">🔍</div>
+                            <div class="scan-details">
+                                <h4>การสแกน #{{ scan.id }}</h4>
+                                <p>{{ scan.file_name|default:"วิเคราะห์โค้ด" }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="user-info">
+                            <strong>{{ scan.user.get_full_name|default:scan.user.username }}</strong><br>
+                            <small style="color: #888;">{{ scan.user.email|default:"ไม่มีอีเมล" }}</small>
+                        </div>
+                    </td>
+                    <td>
+                        {{ scan.scanned_at|date:"d M Y" }}<br>
+                        <small style="color: #888;">{{ scan.scanned_at|time:"H:i" }}</small>
+                    </td>
+                    <td>
+                        {% if scan.critical_severity_count > 0 %}
+                            <span class="severity-badge severity-critical">อันตราย</span>
+                        {% elif scan.high_severity_count > 0 %}
+                            <span class="severity-badge severity-high">สูง</span>
+                        {% elif scan.medium_severity_count > 0 %}
+                            <span class="severity-badge severity-medium">ปานกลาง</span>
+                        {% elif scan.low_severity_count > 0 %}
+                            <span class="severity-badge severity-low">ต่ำ</span>
+                        {% else %}
+                            <span class="severity-badge severity-clean">สะอาด</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="vuln-count">
+                            {% if scan.total_vulnerabilities > 0 %}
+                                <span class="vuln-number {% if scan.critical_severity_count > 0 %}vuln-critical{% elif scan.high_severity_count > 0 %}vuln-high{% elif scan.medium_severity_count > 0 %}vuln-medium{% else %}vuln-low{% endif %}">
+                                    {{ scan.total_vulnerabilities }}
+                                </span>
+                                <span class="vuln-label">ปัญหา</span>
+                            {% else %}
+                                <span class="vuln-number vuln-clean">0</span>
+                                <span class="vuln-label">สะอาด</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if scan.is_completed %}
+                            <span style="color: #4caf50;">✅ เสร็จสิ้น</span>
+                        {% else %}
+                            <span style="color: #ff9800;">⏳ กำลังประมวลผล</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <a href="{% url 'scp4:view_scan_result' scan.id %}" 
+                               class="btn btn-small btn-view" 
+                               title="ดูรายละเอียด">
+                                👁️
+                            </a>
+                            {% if scan.is_completed %}
+                            <a href="{% url 'scp4:export_scan_report_pdf' scan.id %}" 
+                               class="btn btn-small btn-download" 
+                               title="ดาวน์โหลดรายงาน">
+                                📥
+                            </a>
+                            {% endif %}
+                            <button class="btn btn-small btn-delete" 
+                                    title="ลบการสแกน"
+                                    onclick="confirmDeleteScan({{ scan.id }}, '{{ scan.user.username }}')">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <h3>ไม่พบการสแกน</h3>
+            {% if user_search or severity or date_range %}
+            <p>ไม่มีการสแกนที่ตรงกับเงื่อนไขการกรอง</p>
+            <a href="{% url 'scp4:admin_scans' %}" class="btn btn-primary">ล้างฟิลเตอร์</a>
+            {% else %}
+            <p>ยังไม่มีการสแกนใดๆ</p>
+            <p style="color: #888; margin-top: 1rem;">
+                <strong>การแก้ไข:</strong> ตรวจสอบใน views.py ว่า context ส่ง 'page_scans' หรือไม่<br>
+                ตัวแปรที่ใช้ได้: {{ page_scans|length }} รายการ
+            </p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function confirmDeleteScan(scanId, username) {
+    if (confirm(`คุณแน่ใจหรือไม่ที่จะลบการสแกน #${scanId} ของ ${username}? การกระทำนี้ไม่สามารถยกเลิกได้`)) {
+        // ใช้ URL ที่มีอยู่แล้วในระบบ
+        window.location.href = `/history/delete/${scanId}/`;
+    }
+}
+</script>
+{% endblock %}

@@ -1,7 +1,309 @@
 {% comment %} 
-This template is used by analyze_code_api to render the analysis result HTML fragment.
-It expects 'scan_result', 'code', 'raw_output_text', 'ollama_error', 'no_vuln_found', and 'vulnerabilities' in its context.
+Enhanced dark theme analysis result template with better readability
 {% endcomment %}
+
+<style>
+/* Analysis Results Dark Theme Styling */
+.analysis-card {
+    background: linear-gradient(135deg, #1a1a1a 0%, #242424 100%);
+    border: 1px solid #333;
+    border-radius: 16px;
+    padding: 2.5rem;
+    margin: 2rem 0;
+    color: #e0e0e0;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+    position: relative;
+    overflow: hidden;
+}
+
+.analysis-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #1976d2, #4caf50);
+}
+
+.analysis-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #333;
+}
+
+.section-title {
+    color: #4caf50;
+    font-size: 2.2em;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.scan-timestamp {
+    color: #888;
+    font-size: 0.95em;
+    margin: 0;
+}
+
+.section-subtitle {
+    color: #1976d2;
+    font-size: 1.3em;
+    font-weight: 600;
+    margin: 2rem 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section-subtitle::before {
+    content: '▶';
+    color: #4caf50;
+}
+
+/* Code Display */
+.code-reviewed-section {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.code-display {
+    background: #0f0f0f;
+    color: #00ff88;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1.5rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
+    margin: 1rem 0;
+}
+
+/* Analysis Results Section */
+.analysis-results-section {
+    margin-top: 2rem;
+}
+
+/* Safe Code Styling */
+.vulnerability-summary.safe-code {
+    background: linear-gradient(135deg, #1b5e20, #2e7d32);
+    color: #e8f5e8;
+    border: 1px solid #4caf50;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+}
+
+.summary-title {
+    font-size: 1.8em;
+    font-weight: 700;
+    margin: 0 0 1rem 0;
+    color: #4caf50;
+    text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+.summary-description {
+    font-size: 1.1em;
+    line-height: 1.6;
+    margin: 0 0 1rem 0;
+}
+
+.disclaimer {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 1rem;
+    font-style: italic;
+    color: #bbb;
+}
+
+/* Vulnerabilities List */
+.vulnerabilities-list {
+    display: grid;
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.vulnerability-item {
+    background: linear-gradient(135deg, #2d1810, #3d2318);
+    border-radius: 12px;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.vulnerability-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5px;
+    height: 100%;
+}
+
+.vulnerability-item.critical::before { background: #dc3545; }
+.vulnerability-item.high::before { background: #e55353; }
+.vulnerability-item.medium::before { background: #ffc107; }
+.vulnerability-item.low::before { background: #17a2b8; }
+.vulnerability-item.info::before { background: #6c757d; }
+
+.vulnerability-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+.vuln-heading {
+    color: #ff9800;
+    font-size: 1.4em;
+    font-weight: 700;
+    margin: 0 0 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.severity-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.severity-badge.critical { background: #dc3545; color: white; }
+.severity-badge.high { background: #e55353; color: white; }
+.severity-badge.medium { background: #ffc107; color: #000; }
+.severity-badge.low { background: #17a2b8; color: white; }
+.severity-badge.info { background: #6c757d; color: white; }
+
+.vuln-detail, .vuln-remediation {
+    color: #ccc;
+    line-height: 1.7;
+    margin: 1rem 0;
+}
+
+.vuln-detail strong, .vuln-remediation strong {
+    color: #4caf50;
+    font-weight: 600;
+}
+
+.vuln-code-snippet {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.vuln-code-snippet p {
+    color: #4caf50;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+}
+
+.vuln-code-snippet .code-display {
+    background: #0a0a0a;
+    margin: 0;
+}
+
+/* Raw Output Fallback */
+.vulnerability-summary.raw-output-fallback {
+    background: linear-gradient(135deg, #3d2f00, #4d3f10);
+    color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
+}
+
+.raw-output-display {
+    background: #1a1a1a;
+    color: #00ff88;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1.5rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.85em;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-x: auto;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
+    margin: 1rem 0 0 0;
+}
+
+/* Error Section */
+.analysis-error-section {
+    background: linear-gradient(135deg, #5d1a1a, #7d2a2a);
+    border: 1px solid #f44336;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(244, 67, 54, 0.2);
+}
+
+.error-title {
+    color: #f44336;
+    font-size: 1.8em;
+    font-weight: 700;
+    margin: 0 0 1rem 0;
+}
+
+.error-message {
+    color: #ffcdd2;
+    font-size: 1.1em;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* No Data Message */
+.no-data-message {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+    font-size: 1.1em;
+    background: #1e1e1e;
+    border-radius: 12px;
+    border: 1px dashed #333;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .analysis-card {
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+    
+    .section-title {
+        font-size: 1.8em;
+    }
+    
+    .code-display, .raw-output-display {
+        font-size: 0.8em;
+        padding: 1rem;
+    }
+    
+    .vuln-heading {
+        font-size: 1.2em;
+        flex-wrap: wrap;
+    }
+    
+    .vulnerability-item {
+        padding: 1.5rem;
+    }
+}
+</style>
 
 <div class="analysis-card">
     {% if ollama_error %}
@@ -16,68 +318,54 @@ It expects 'scan_result', 'code', 'raw_output_text', 'ollama_error', 'no_vuln_fo
         </div>
 
         <div class="code-reviewed-section">
-            <h4 class="section-subtitle">โค้ดที่ส่งวิเคราะห์:</h4>
+            <h4 class="section-subtitle">โค้ดที่ส่งวิเคราะห์</h4>
             <pre class="code-display">{{ code|escape }}</pre>
         </div>
 
         <div class="analysis-results-section">
-            <h4 class="section-subtitle">ผลการวิเคราะห์:</h4>
+            <h4 class="section-subtitle">ผลการวิเคราะห์</h4>
 
             {% if no_vuln_found %}
-                <div class="vulnerability-summary safe-code" style="background-color: #d4edda; color: #155724; padding: 15px; border-radius: 8px; border: 1px solid #c3e6cb;">
+                <div class="vulnerability-summary safe-code">
                     <h5 class="summary-title">✅ ปลอดภัย!</h5>
                     <p class="summary-description">AI ไม่พบช่องโหว่หรือความเสี่ยงด้านความปลอดภัยที่สำคัญในโค้ดนี้</p>
-                    <p class="disclaimer" style="font-size: 0.85em; color: #6c757d;">
+                    <div class="disclaimer">
                         <small>หมายเหตุ: นี่คือการวิเคราะห์จาก AI และไม่ได้รับประกันความปลอดภัย 100% โปรดตรวจสอบโค้ดด้วยตนเองอีกครั้ง</small>
-                    </p>
+                    </div>
                 </div>
             {% else %}
                 {% if vulnerabilities %} 
                     <div class="vulnerabilities-list">
                         {% for vuln in vulnerabilities %}
-                            <div class="vulnerability-item" style="border: 1px solid #ddd; border-left: 6px solid 
-                                {% if vuln.severity == 'Critical' %} #dc3545
-                                {% elif vuln.severity == 'High' %} #e55353
-                                {% elif vuln.severity == 'Medium' %} #ffc107
-                                {% elif vuln.severity == 'Low' %} #17a2b8
-                                {% else %} #6c757d
-                                {% endif %};
-                                padding: 10px 15px; margin-bottom: 15px; border-radius: 5px;">
-                                <h5 class="vuln-heading" style="margin-top: 0;">
+                            <div class="vulnerability-item {{ vuln.severity|lower }}">
+                                <h5 class="vuln-heading">
                                     {{ vuln.name }}
-                                    <span class="severity-badge" style="background-color: 
-                                        {% if vuln.severity == 'Critical' %} #dc3545
-                                        {% elif vuln.severity == 'High' %} #e55353
-                                        {% elif vuln.severity == 'Medium' %} #ffc107; color: #212529
-                                        {% elif vuln.severity == 'Low' %} #17a2b8
-                                        {% else %} #6c757d
-                                        {% endif %};
-                                        color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; margin-left: 10px;">
+                                    <span class="severity-badge {{ vuln.severity|lower }}">
                                         {{ vuln.severity }}
                                     </span>
                                 </h5>
                                 <p class="vuln-detail"><strong>รายละเอียด:</strong> {{ vuln.description }}</p>
                                 <p class="vuln-remediation"><strong>วิธีแก้ไข:</strong> {{ vuln.remediation }}</p>
                                 {% if vuln.code_snippet %}
-                                    <div class="vuln-code-snippet" style="background: #f8f9fa; border-radius: 5px; padding: 10px; margin-top: 10px;">
+                                    <div class="vuln-code-snippet">
                                         <p><strong>โค้ดที่เกี่ยวข้อง:</strong></p>
-                                        <pre class="code-display" style="overflow-x: auto;">{{ vuln.code_snippet|escape }}</pre>
+                                        <pre class="code-display">{{ vuln.code_snippet|escape }}</pre>
                                     </div>
                                 {% endif %}
                             </div>
                         {% endfor %}
                     </div>
                 {% else %}
-                    <div class="vulnerability-summary raw-output-fallback" style="background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba;">
-                        <h5 class="summary-title">ℹ️ ผลลัพธ์จาก AI (ดิบ):</h5>
-                        <p class="summary-description">เนื่องจากไม่พบช่องโหว่เฉพาะ หรือการวิเคราะห์ไม่ได้ให้รูปแบบที่ชัดเจน ผลลัพธ์ดิบจาก AI จึงถูกแสดงดังนี้:</p>
-                        <pre class="raw-output-display" style="white-space: pre-wrap; background: #fff; border-radius: 5px; padding: 10px; overflow-x: auto;">{{ raw_output_text|escape }}</pre>
+                    <div class="vulnerability-summary raw-output-fallback">
+                        <h5 class="summary-title">ℹ️ ผลลัพธ์จาก AI</h5>
+                        <p class="summary-description">เนื่องจากไม่พบช่องโหว่เฉพาะ หรือการวิเคราะห์ไม่ได้ให้รูปแบบที่ชัดเจน ผลลัพธ์จาก AI จึงถูกแสดงดังนี้:</p>
+                        <pre class="raw-output-display">{{ raw_output_text|escape }}</pre>
                     </div>
                 {% endif %}
             {% endif %}
         </div>
     {% else %}
-        <div class="no-data-message" style="text-align: center; color: #6c757d; margin-top: 30px;">
+        <div class="no-data-message">
             <p>ไม่มีข้อมูลผลการวิเคราะห์ที่จะแสดง</p>
         </div>
     {% endif %}

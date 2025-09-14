@@ -2,193 +2,504 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>AI Code Review Report - Scan ID: {{ scan_result.id }}</title>
+    <title>AI Code Security Report - Scan ID: {{ scan_result.id }}</title>
     <style>
-        /* Base Styles */
+        /* Modern Professional CSS Variables */
+        :root {
+            --primary-color: #1a252f;
+            --secondary-color: #2c3e50;
+            --accent-color: #2980b9;
+            --success-color: #27ae60;
+            --warning-color: #e67e22;
+            --danger-color: #e74c3c;
+            --critical-color: #c0392b;
+            --info-color: #17a2b8;
+            --light-gray: #f8f9fa;
+            --medium-gray: #6c757d;
+            --dark-gray: #495057;
+            --text-color: #212529;
+            --text-secondary: #495057;
+            --border-color: #dee2e6;
+            --background-white: #ffffff;
+        }
+
+        /* Base Typography */
+        @page {
+            margin: 20mm;
+            @bottom-right {
+                content: "หน้า " counter(page) " จาก " counter(pages);
+                font-size: 9pt;
+                color: var(--medium-gray);
+            }
+        }
+
         body { 
-            font-family: 'TH Sarabun New', Arial, sans-serif; /* Recommended Thai font for print */
-            margin: 20mm; 
-            font-size: 11pt;
-            color: #333;
-        }
-        
-        /* Headings */
-        h1, h2, h3, h4 { 
-            color: #2c3e50; /* Darker blue-grey for professionalism */
-            margin-bottom: 5mm; 
-        }
-        h1 { 
-            font-size: 24pt; 
-            text-align: center; 
-            margin-bottom: 10mm;
-            border-bottom: 2px solid #ccc;
-            padding-bottom: 5mm;
-        }
-        h2 { 
-            font-size: 18pt; 
-            border-bottom: 1px solid #c0c0c0; 
-            padding-bottom: 3mm; 
-            margin-top: 15mm;
-            color: #34495e; /* Slightly lighter heading color */
-        }
-        h3 { 
-            font-size: 14pt; 
-            color: #16a085; /* Teal for sub-headings */
-            margin-top: 10mm; 
-        }
-        h4 { 
-            font-size: 13pt; 
-            color: #27ae60; /* Green for vulnerability titles */
-            margin-top: 8mm; 
+            font-size: 12pt;
+            line-height: 1.7;
         }
 
-        /* Paragraphs and Text */
-        p {
-            margin-bottom: 2mm;
-        }
-        strong {
-            font-weight: bold;
-        }
-
-        /* Preformatted Text (Code Blocks) */
-        pre { 
-            background-color: #f8f8f8; 
-            border: 1px solid #e0e0e0; 
-            padding: 8mm; 
-            white-space: pre-wrap; 
-            word-wrap: break-word;
-            font-family: 'Courier New', monospace;
-            font-size: 10pt;
-            overflow-x: auto;
-            margin-bottom: 10mm;
-            line-height: 1.4;
-        }
-
-        /* Vulnerability Items */
-        .vulnerability-item {
-            border: 1px solid #dcdcdc; /* Light grey border */
-            background-color: #ffffff; /* White background */
-            padding: 12mm;
-            margin-bottom: 10mm;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Subtle shadow */
-        }
-        .vulnerability-item.safe {
-            border-color: #4CAF50; /* Green border for safe */
-            background-color: #e8f5e9; /* Light green background */
-        }
-        .vulnerability-item.no-vulnerability { /* For when AI found no specific vulns but provided raw output */
-            border-color: #5bc0de; /* Info blue */
-            background-color: #effaff;
-        }
-
-        /* Vulnerability Item Headings */
-        .vulnerability-item h4 {
-            margin-top: 0;
-            margin-bottom: 5mm;
-            display: flex;
-            align-items: center;
-            gap: 8px; /* Space between title and badge */
-        }
-
-        /* Severity Badges */
-        .severity-badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 9pt;
-            font-weight: bold;
+        /* Modern Header Design */
+        .report-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: white;
+            padding: 20mm 15mm;
+            margin: -20mm -20mm 15mm -20mm;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .report-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M30 30c0-11.046-8.954-20-20-20S-10 18.954-10 30s8.954 20 20 20 20-8.954 20-20z'/%3E%3C/g%3E%3C/svg%3E") repeat;
+        }
+
+        .report-title {
+            font-size: 24pt;
+            font-weight: 700;
+            margin: 0 0 10mm 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .report-subtitle {
+            font-size: 14pt;
+            font-weight: 300;
+            margin: 0;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Metadata Card */
+        .metadata-card {
+            background: var(--light-gray);
+            border-left: 5px solid var(--accent-color);
+            padding: 15mm;
+            margin-bottom: 15mm;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10mm;
+        }
+
+        .metadata-label {
+            color: var(--dark-gray);
+            font-weight: 700;
+            letter-spacing: 0.8px;
+        }
+
+        .metadata-label {
+            font-size: 9pt;
+            color: var(--medium-gray);
             text-transform: uppercase;
+            font-weight: 600;
             letter-spacing: 0.5px;
         }
-        /* Specific colors for severity levels */
-        .severity-badge.critical { background-color: #c0392b; } /* Darker Red */
-        .severity-badge.high { background-color: #e67e22; }    /* Dark Orange */
-        .severity-badge.medium { background-color: #f1c40f; }  /* Yellow */
-        .severity-badge.low { background-color: #3498db; }     /* Blue */
-        .severity-badge.info { background-color: #7f8c8d; }    /* Grey */
 
-        /* Footer */
-        .footer {
-            text-align: center;
-            font-size: 9pt;
-            color: #777;
-            margin-top: 20mm;
-            border-top: 1px solid #eee;
-            padding-top: 5mm;
+        .metadata-value {
+            font-size: 12pt;
+            font-weight: 600;
+            color: var(--text-color);
         }
 
-        /* Page Breaks (for multi-page PDFs) */
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 8mm;
+            margin: 20mm 0 10mm 0;
+            padding-bottom: 5mm;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        .section-icon {
+            width: 8mm;
+            height: 8mm;
+            background: var(--accent-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14pt;
+            color: white;
+            font-weight: bold;
+        }
+
+        .section-title {
+            font-size: 18pt;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        /* Status Cards */
+        .status-card {
+            border-radius: 8px;
+            padding: 15mm;
+            margin-bottom: 10mm;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+        }
+
+        .status-safe {
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+            border-color: var(--success-color);
+        }
+
+        .status-safe::before {
+            background: var(--success-color);
+        }
+
+        .status-warning {
+            background: linear-gradient(135deg, #fff3e0 0%, #fef7f0 100%);
+            border-color: var(--warning-color);
+        }
+
+        .status-warning::before {
+            background: var(--warning-color);
+        }
+
+        .status-error {
+            background: linear-gradient(135deg, #ffebee 0%, #fce4ec 100%);
+            border-color: var(--danger-color);
+        }
+
+        .status-error::before {
+            background: var(--danger-color);
+        }
+
+        /* Vulnerability Cards */
+        .vulnerability-card {
+            background: white;
+            border-radius: 8px;
+            padding: 12mm;
+            margin-bottom: 8mm;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .vulnerability-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+
+        .vulnerability-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8mm;
+            padding-bottom: 5mm;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .vulnerability-title {
+            font-size: 14pt;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0;
+        }
+
+        /* Modern Severity Badges */
+        .severity-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 9pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .severity-critical { 
+            background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+        }
+        .severity-critical::before { background: #c0392b; }
+
+        .severity-high { 
+            background: linear-gradient(135deg, #d35400 0%, #e67e22 100%);
+        }
+        .severity-high::before { background: #d35400; }
+
+        .severity-medium { 
+            background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
+            color: white;
+        }
+        .severity-medium::before { background: #f39c12; }
+
+        .severity-low { 
+            background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+        }
+        .severity-low::before { background: #2980b9; }
+
+        /* Content Sections */
+        .vulnerability-content {
+            display: grid;
+            gap: 6mm;
+        }
+
+        .content-row {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 5mm;
+            align-items: start;
+        }
+
+        .content-label {
+            font-size: 11pt;
+            font-weight: 700;
+            color: var(--dark-gray);
+            min-width: 30mm;
+        }
+        .content-value {
+            font-size: 12pt;
+            line-height: 1.6;
+        }
+
+        /* Code Blocks */
+        .code-container {
+            margin-top: 8mm;
+        }
+
+        .code-block {
+            font-size: 10pt;
+            line-height: 1.5;
+            padding: 10mm;
+            color: var(--text-color);
+        }
+
+        /* Summary Section */
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(40mm, 1fr));
+            gap: 8mm;
+            margin-bottom: 15mm;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10mm;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .stat-number {
+            font-size: 24pt;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-bottom: 2mm;
+        }
+
+        .stat-label {
+            font-size: 11pt;
+            color: var(--dark-gray);
+            font-weight: 700;
+        }   
+
+        /* Footer */
+        .report-footer {
+            margin-top: 25mm;
+            padding-top: 10mm;
+            border-top: 2px solid var(--light-gray);
+            text-align: center;
+            color: var(--medium-gray);
+            font-size: 9pt;
+        }
+
+        .footer-logo {
+            font-size: 14pt;
+            font-weight: 600;
+            color: var(--accent-color);
+            margin-bottom: 3mm;
+        }
+
+        /* Page Breaks */
         .page-break {
             page-break-before: always;
+        }
+
+        /* Responsive Adjustments for Print */
+        @media print {
+            .metadata-grid {
+                grid-template-columns: 1fr;
+                gap: 5mm;
+            }
+            
+            .summary-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
 <body>
-    <h1>รายงานผลการวิเคราะห์โค้ดโดย AI</h1>
+    <!-- Modern Header -->
+    <div class="report-header">
+        <h1 class="report-title">🛡️ AI Code Security Report</h1>
+        <p class="report-subtitle">รายงานการวิเคราะห์ความปลอดภัยโค้ดโดย AI</p>
+    </div>
 
-    <p style="text-align: center;">
-        <strong>โครงการ:</strong> {{ scan_result.project.name }}<br>
-        <strong>สแกนโดย:</strong> {{ scan_result.project.owner.username }}<br>
-        <strong>วันที่และเวลาสแกน:</strong> {{ scan_result.scanned_at|date:"d M Y H:i:s" }}<br>
-        <strong>วันที่ออกรายงาน:</strong> {{ current_date|date:"d M Y H:i:s" }}
-    </p>
+    <!-- Metadata Card -->
+    <div class="metadata-card">
+        <div class="metadata-grid">
+            <div class="metadata-item">
+                <span class="metadata-label">โครงการ</span>
+                <span class="metadata-value">{{ scan_result.project.name|default:"ไม่ระบุ" }}</span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">ผู้สแกน</span>
+                <span class="metadata-value">{{ scan_result.user.username|default:"ไม่ระบุ" }}</span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">วันที่สแกน</span>
+                <span class="metadata-value">{{ scan_result.scanned_at|date:"d M Y H:i:s" }}</span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Scan ID</span>
+                <span class="metadata-value">#{{ scan_result.id }}</span>
+            </div>
+        </div>
+    </div>
 
-    <br>
+    <!-- Executive Summary -->
+    <div class="section-header">
+        <div class="section-icon">📊</div>
+        <h2 class="section-title">สรุปผลการวิเคราะห์</h2>
+    </div>
 
-    <h2>ภาพรวมผลการวิเคราะห์</h2>
     {% if no_vuln_found %}
-        <div class="vulnerability-item safe">
-            <h3>✅ ปลอดภัย!</h3>
-            <p>AI ไม่พบช่องโหว่หรือความเสี่ยงด้านความปลอดภัยที่สำคัญในโค้ดนี้</p>
-            <p style="font-size: 9pt; color: #666;">
-                <em>หมายเหตุ: การวิเคราะห์นี้ดำเนินการโดย AI และไม่สามารถรับประกันความปลอดภัยได้ 100% โปรดตรวจสอบโค้ดด้วยตนเองอีกครั้งเพื่อความมั่นใจสูงสุด.</em>
+        <div class="status-card status-safe">
+            <h3 style="color: var(--success-color); margin-top: 0;">✅ สถานะ: ปลอดภัย</h3>
+            <p><strong>AI ไม่พบช่องโหว่หรือความเสี่ยงด้านความปลอดภัยที่สำคัญในโค้ดนี้</strong></p>
+            <p style="font-size: 10pt; color: var(--medium-gray); margin-bottom: 0;">
+                <em>หมายเหตุ: การวิเคราะห์นี้ดำเนินการโดย AI ซึ่งมีความแม่นยำสูง แต่ยังคงแนะนำให้มีการตรวจสอบโดยผู้เชี่ยวชาญเพิ่มเติม</em>
             </p>
         </div>
     {% elif ollama_error %}
-        <div class="vulnerability-item no-vulnerability" style="border-color: #dc3545; background-color: #ffe0e0;">
-            <h3>⚠️ เกิดข้อผิดพลาดในการวิเคราะห์!</h3>
-            <p>AI ไม่สามารถวิเคราะห์โค้ดได้สมบูรณ์ เนื่องจากเกิดข้อผิดพลาดภายในระบบ:</p>
-            <pre>{{ ollama_error }}</pre>
-            <p style="font-size: 9pt; color: #666;"><em>กรุณาลองใหม่อีกครั้ง หรือตรวจสอบปัญหาที่เกี่ยวข้องกับการตั้งค่า AI.</em></p>
+        <div class="status-card status-error">
+            <h3 style="color: var(--danger-color); margin-top: 0;">⚠️ สถานะ: เกิดข้อผิดพลาด</h3>
+            <p><strong>AI ไม่สามารถวิเคราะห์โค้ดได้สมบูรณ์</strong></p>
+            <div class="code-container">
+                <div class="code-block">{{ raw_output_text }}</div>
+            </div>
+            <p style="font-size: 10pt; color: var(--medium-gray); margin-bottom: 0;">
+                <em>แนะนำ: ตรวจสอบการตั้งค่าระบบ AI หรือลองสแกนใหม่อีกครั้ง</em>
+            </p>
         </div>
     {% else %}
-         <p>AI ได้ทำการวิเคราะห์โค้ดและพบช่องโหว่ดังต่อไปนี้:</p>
-        <ul style="list-style: none; padding: 0;">
-            {% for vuln in scan_result.vulnerabilities.all %}
-                <div class="vulnerability-item">
-                    <h4>
-                        {# แก้ไขตรงนี้: เปลี่ยน first_upper เป็น capfirst #}
-                        {{ vuln.severity|capfirst }} 
-                        <span class="severity-badge {{ vuln.severity|lower }}">{{ vuln.severity }}</span>
-                    </h4>
-                    <p><strong>ประเภท:</strong> {{ vuln.description|truncatechars:100 }}</p>
-                    <p><strong>คำอธิบาย:</strong> {{ vuln.description }}</p>
-                    <p><strong>วิธีแก้ไข:</strong> {{ vuln.remediation }}</p>
+        <!-- Vulnerability Statistics -->
+        <div class="summary-stats">
+            <div class="stat-card">
+                <div class="stat-number" style="color: var(--danger-color);">{{ vulnerabilities.count }}</div>
+                <div class="stat-label">ช่องโหว่ที่พบ</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color: var(--critical-color);">{{ vulnerabilities|dictsort:"severity"|slice:":2"|length }}</div>
+                <div class="stat-label">ความรุนแรงสูง</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color: var(--success-color);">{{ scan_result.scanned_at|date:"d" }}</div>
+                <div class="stat-label">วันที่สแกน</div>
+            </div>
+        </div>
+
+        <!-- Vulnerabilities Section -->
+        <div class="section-header">
+            <div class="section-icon">🔍</div>
+            <h2 class="section-title">รายละเอียดช่องโหว่</h2>
+        </div>
+
+        {% for vuln in vulnerabilities %}
+            <div class="vulnerability-card severity-{{ vuln.severity|lower }}">
+                <div class="vulnerability-header">
+                    <h4 class="vulnerability-title">{{ vuln.name|default:"ช่องโหว่ไม่ระบุชื่อ" }}</h4>
+                    <span class="severity-badge severity-{{ vuln.severity|lower }}">{{ vuln.severity }}</span>
+                </div>
+                
+                <div class="vulnerability-content">
+                    <div class="content-row">
+                        <span class="content-label">ประเภท</span>
+                        <span class="content-value">{{ vuln.vulnerability_type|default:"ไม่ระบุ" }}</span>
+                    </div>
+                    <div class="content-row">
+                        <span class="content-label">คำอธิบาย</span>
+                        <span class="content-value">{{ vuln.description|default:"ไม่มีคำอธิบาย" }}</span>
+                    </div>
+                    <div class="content-row">
+                        <span class="content-label">วิธีแก้ไข</span>
+                        <span class="content-value">{{ vuln.remediation|default:"ไม่มีคำแนะนำ" }}</span>
+                    </div>
                     {% if vuln.code_snippet %}
-                        <p><strong>โค้ดที่เกี่ยวข้อง:</strong></p>
-                        <pre>{{ vuln.code_snippet }}</pre>
+                        <div class="content-row">
+                            <span class="content-label">โค้ดที่เกี่ยวข้อง</span>
+                            <div class="code-container">
+                                <div class="code-block">{{ vuln.code_snippet }}</div>
+                            </div>
+                        </div>
                     {% endif %}
                 </div>
-            {% endfor %}
-        </ul>
+            </div>
+        {% endfor %}
     {% endif %}
 
-    <div class="page-break"></div> {# Ensure code is on a new page if vulns are extensive #}
+    <!-- Code Section -->
+    <div class="page-break"></div>
+    <div class="section-header">
+        <div class="section-icon">💻</div>
+        <h2 class="section-title">โค้ดที่ส่งวิเคราะห์</h2>
+    </div>
+    
+    <div class="code-container">
+        <div class="code-block">{{ code }}</div>
+    </div>
 
-    <h2>โค้ดที่ส่งวิเคราะห์</h2>
-    <pre>{{ code }}</pre>
-
-    {% if raw_output_text %}
+    {% if raw_output_text and not ollama_error %}
         <div class="page-break"></div>
-        <h2>ผลลัพธ์ดิบจาก AI (เพื่อการอ้างอิง)</h2>
-        <pre>{{ raw_output_text }}</pre>
+        <div class="section-header">
+            <div class="section-icon">🤖</div>
+            <h2 class="section-title">ผลลัพธ์ดิบจาก AI</h2>
+        </div>
+        
+        <div class="code-container">
+            <div class="code-block">{{ raw_output_text }}</div>
+        </div>
     {% endif %}
 
-    <div class="footer">
-        <p>รายงานนี้จัดทำโดย AI Code Reviewer Application</p>
-        <p>Scan ID: {{ scan_result.id }}</p>
+    <!-- Footer -->
+    <div class="report-footer">
+        <div class="footer-logo">🛡️ AI Code Security Scanner</div>
+        <p>รายงานนี้สร้างโดยระบบ AI Code Review อัตโนมัติ</p>
+        <p>Scan ID: {{ scan_result.id }} | สร้างเมื่อ: {{ current_date }}</p>
     </div>
 </body>
 </html>

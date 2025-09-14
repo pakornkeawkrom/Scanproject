@@ -1,276 +1,460 @@
-{% extends 'scp4/base.html' %} {# **แก้ไขแล้ว: กลับไปใช้ 'scp4/base.html'** #}
+{% extends 'scp4/base.html' %}
+{% load static %}
 
-{# ไม่ต้องมี {% load static %} ซ้ำตรงนี้ เพราะ base.html มีแล้ว #}
-
-{% block title %}รายละเอียดผลการวิเคราะห์โค้ด - Code Scan Pro{% endblock %}
+{% block title %}รายละเอียดการสแกน - Code Scan Pro{% endblock %}
 
 {% block extra_head %}
-{# ใส่ CSS เฉพาะหน้านี้ในส่วน head ของ HTML โดยจะถูกแทรกเข้าไปใน block extra_head ใน base.html #}
 <style>
-    /* พื้นหลังหลักและฟอนต์โทนเข้ม - ไม่จำเป็นต้องซ้ำ หาก body ใน base.html กำหนดแล้ว */
-    /* ถ้าต้องการโอเวอร์ไรด์บางส่วน หรือเพิ่มใหม่ ให้ใส่ที่นี่ */
-    /* body {
-        background-color: #121212;
-        color: #e0e0e0;
+    :root {
+        --primary-color: #4CAF50;
+        --secondary-color: #6c757d;
+        --background-main: #121212;
+        --background-container: #1e1e1e;
+        --text-color: #f0f0f0;
+        --border-color: #444;
+        --critical-color: #dc3545;
+        --high-color: #e55353;
+        --medium-color: #ffc107;
+        --low-color: #17a2b8;
+        --safe-color: #28a745;
+    }
+
+    body {
+        background-color: var(--background-main);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        margin: 0;
-        padding: 20px 40px;
-    } */
-
-    /* หัวข้อ */
-    h1, h2 {
-        color: #81c784; /* สีเขียวอ่อน */
-        font-weight: 700;
-        margin-bottom: 20px;
     }
-
-    /* แสดงโค้ด */
-    pre {
-        background: #1e1e1e;
+    
+    .main-container {
+        max-width: 1200px;
+        margin: auto;
         padding: 20px;
-        border-radius: 8px;
-        overflow-x: auto;
-        font-family: 'Fira Code', monospace; /* ใช้ Fira Code เหมือนใน base.html */
-        font-size: 1rem;
-        box-shadow: 0 0 10px rgba(56, 142, 60, 0.53); /* ปรับค่า alpha ให้ถูกต้อง */
-        color: #a5d6a7;
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 30px;
     }
-
-    /* ปุ่มหลัก - อาจจะซ้ำกับ base.html หากใช้ชื่อ class เหมือนกัน */
-    /* ถ้า base.html มีปุ่มทั่วไปอยู่แล้ว อาจจะต้องรวม CSS หรือใช้ class แยกกัน */
-    .btn {
-        display: inline-block;
-        background: #388e3c;
-        color: #f0f0f0;
-        padding: 10px 18px;
-        margin: 6px 8px 6px 0;
-        border-radius: 6px;
-        font-weight: 600;
-        text-decoration: none;
-        box-shadow: 0 3px 6px rgba(56,142,60,0.6);
-        transition: background-color 0.3s ease, box-shadow 0.3s ease;
-        cursor: pointer;
+    
+    .content-area {
+        background-color: var(--background-container);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+        color: var(--text-color);
     }
-    .btn:hover {
-        background: #2e7d32;
-        box-shadow: 0 5px 15px rgba(46,125,50,0.8);
+    
+    .sidebar {
+        background-color: var(--background-container);
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+        color: var(--text-color);
+        height: fit-content;
+        position: sticky;
+        top: 20px;
     }
-
-    .btn-danger {
-        background: #d32f2f;
-        box-shadow: 0 3px 6px rgba(211,47,47,0.6);
-    }
-    .btn-danger:hover {
-        background: #b71c1c;
-        box-shadow: 0 5px 15px rgba(183,28,28,0.8);
-    }
-
-    .btn-primary {
-        background: #1976d2;
-        box-shadow: 0 3px 6px rgba(25,118,210,0.6);
-    }
-    .btn-primary:hover {
-        background: #1565c0;
-        box-shadow: 0 5px 15px rgba(21,101,192,0.8);
-    }
-
-    /* ปุ่มที่บอกว่าเป็นหน้าปัจจุบัน */
-    .current-page-indicator {
-        background: #81c784;
-        color: #121212;
-        cursor: default;
-        box-shadow: none;
-    }
-
-    /* รายการประวัติ */
-    ul {
-        list-style: none;
-        padding-left: 0;
-    }
-    .history-list-item {
-        background: #1f1f1f;
-        margin-bottom: 16px;
-        padding: 18px 24px;
-        border-radius: 10px;
-        color: #cfd8dc;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+    
+    .top-actions {
         display: flex;
-        flex-wrap: wrap;
         justify-content: space-between;
         align-items: center;
-        transition: box-shadow 0.3s ease;
+        margin-bottom: 25px;
     }
-    .history-list-item:hover {
-        box-shadow: 0 8px 20px rgba(56,142,60,0.9);
-    }
-    .current-scan-highlight {
-        border-left: 6px solid #81c784;
-        background: rgba(44,111,74,0.13); /* เขียวใสๆ */
-    }
-    .history-checkbox-wrapper {
+    
+    .back-button, .action-btn {
+        background-color: transparent;
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        padding: 10px 20px;
+        border-radius: 20px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
     }
-    .history-checkbox {
-        transform: scale(1.3);
-        cursor: pointer;
-        filter: invert(1);
+    
+    .back-button:hover {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+        color: #fff;
+        transform: translateY(-2px);
     }
-    .scan-info-text {
-        font-size: 0.95rem;
+    
+    .action-btn.pdf {
+        background-color: var(--critical-color);
+        border-color: var(--critical-color);
+        color: white;
     }
-
-    /* สีช่องโหว่ */
-    .vuln-high {
-        color: #ef5350; /* แดงสด */
-        font-weight: 700;
+    
+    .action-btn.pdf:hover {
+        background-color: #bb2d3b;
+        transform: translateY(-2px);
     }
-    .vuln-medium {
-        color: #ffb74d; /* ส้มทอง */
-        font-weight: 700;
-    }
-    .vuln-none {
-        color: #81c784; /* เขียว */
-        font-weight: 700;
-    }
-
-    /* ปุ่มดูรายละเอียด และ PDF */
-    .view-details-btn, .export-pdf-btn {
-        margin-left: 12px;
-    }
-
-    /* แถบลบรายการและล้างทั้งหมด */
-    .delete-options {
+    
+    .scan-header {
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 20px;
         margin-bottom: 30px;
-        display: flex; /* จัดให้ปุ่มอยู่ข้างกัน */
-        gap: 10px; /* เพิ่มระยะห่างระหว่างปุ่ม */
     }
-
-    /* ส่วน export ปุ่ม */
-    .export-buttons {
-        margin: 20px 0 40px 0;
-        display: flex; /* จัดให้ปุ่มอยู่ข้างกัน */
-        gap: 10px; /* เพิ่มระยะห่างระหว่างปุ่ม */
+    
+    .scan-title {
+        font-size: 2.2em;
+        color: var(--primary-color);
+        margin: 0 0 10px 0;
+        font-weight: 600;
     }
-
-    hr {
-        border-color: #444;
-        margin-top: 40px;
+    
+    .scan-meta {
+        color: var(--secondary-color);
+        font-size: 1em;
+    }
+    
+    .section-title {
+        font-size: 1.6em;
+        color: var(--text-color);
+        margin: 30px 0 15px 0;
+        font-weight: 500;
+    }
+    
+    .code-display {
+        background-color: #0d0d0d;
+        color: #4CAF50;
+        padding: 20px;
+        border-radius: 10px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-family: 'Fira Code', 'Courier New', Courier, monospace;
+        line-height: 1.5;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .vulnerability-item {
+        background-color: #2a2a2a;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-left: 6px solid;
+        transition: transform 0.3s ease;
+    }
+    
+    .vulnerability-item:hover {
+        transform: translateY(-2px);
+    }
+    
+    .vuln-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 10px;
+    }
+    
+    .severity-badge {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        font-weight: bold;
+        color: #fff;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .vulnerability-item[data-severity="Critical"] { 
+        border-left-color: var(--critical-color); 
+    }
+    .vulnerability-item[data-severity="Critical"] .severity-badge { 
+        background-color: var(--critical-color); 
+    }
+    .vulnerability-item[data-severity="High"] { 
+        border-left-color: var(--high-color); 
+    }
+    .vulnerability-item[data-severity="High"] .severity-badge { 
+        background-color: var(--high-color); 
+    }
+    .vulnerability-item[data-severity="Medium"] { 
+        border-left-color: var(--medium-color); 
+    }
+    .vulnerability-item[data-severity="Medium"] .severity-badge { 
+        background-color: var(--medium-color); 
+        color: #212529; 
+    }
+    .vulnerability-item[data-severity="Low"] { 
+        border-left-color: var(--low-color); 
+    }
+    .vulnerability-item[data-severity="Low"] .severity-badge { 
+        background-color: var(--low-color); 
+    }
+    
+    .safe-message, .error-message {
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        text-align: center;
+    }
+    
+    .safe-message {
+        background-color: #2e4a30;
+        color: #92e092;
+        border: 1px solid #3b633b;
+    }
+    
+    .error-message {
+        background-color: #4f2222;
+        color: #ff8b8b;
+        border: 1px solid #6d2f2f;
+    }
+    
+    /* Sidebar Styles */
+    .sidebar-title {
+        font-size: 1.4em;
+        color: var(--primary-color);
+        margin: 0 0 20px 0;
+        font-weight: 600;
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 10px;
+    }
+    
+    .stats-summary {
+        background-color: #2a2a2a;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+    }
+    
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #444;
+    }
+    
+    .stat-item:last-child {
+        margin-bottom: 0;
+        border-bottom: none;
+    }
+    
+    .stat-label {
+        color: var(--secondary-color);
+    }
+    
+    .stat-value {
+        font-weight: bold;
+    }
+    
+    .stat-value.critical { color: var(--critical-color); }
+    .stat-value.medium { color: var(--medium-color); }
+    .stat-value.low { color: var(--low-color); }
+    .stat-value.safe { color: var(--safe-color); }
+    
+    .other-scans-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .other-scan-item {
+        background-color: #2a2a2a;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+        border-left: 3px solid var(--primary-color);
+    }
+    
+    .other-scan-item:hover {
+        background-color: #333;
+        transform: translateX(5px);
+    }
+    
+    .other-scan-item.current {
+        background-color: var(--primary-color);
+        color: #000;
+        font-weight: bold;
+    }
+    
+    .other-scan-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+    
+    .scan-date {
+        font-size: 0.9em;
+        margin-bottom: 5px;
+    }
+    
+    .scan-summary {
+        font-size: 0.8em;
+        opacity: 0.8;
+    }
+    
+    .no-other-scans {
+        text-align: center;
+        color: var(--secondary-color);
+        font-style: italic;
+        padding: 20px;
+    }
+    
+    @media (max-width: 768px) {
+        .main-container {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .sidebar {
+            position: static;
+            order: -1;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-{# เนื้อหาหลักของหน้านี้จะถูกแทรกเข้าไปใน block content ใน base.html #}
-<h1 style="color: #81c784;">รายละเอียดผลการวิเคราะห์โค้ด</h1>
+<div class="main-container">
+    <!-- Main Content Area -->
+    <div class="content-area">
+        <div class="top-actions">
+            <a href="{% url 'scp4:scan_history' %}" class="back-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5a.5.5 0 0 0 .5-.5z"/>
+                </svg>
+                กลับประวัติ
+            </a>
+            
+            <a href="{% url 'scp4:export_scan_report_pdf' scan_result.id %}" target="_blank" class="action-btn pdf">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+                </svg>
+                Export PDF
+            </a>
+        </div>
 
-<pre>{{ code }}</pre>
-
-{% include "scp4/partials/analysis_result.html" with {# **แก้ไขแล้ว: กลับไปใช้ 'scp4/partials/analysis_result.html'** #}
-    scan_result=scan_result
-    code=code
-    raw_output_text=raw_output_text
-    no_vuln_found=no_vuln_found
-    ollama_error=ollama_error
-    vulnerabilities=vulnerabilities %}
-
-<div class="export-buttons">
-    <a href="{% url 'scp4:index' %}" class="btn back-to-scan">🔙 กลับไปวิเคราะห์โค้ดใหม่</a>
-</div>
-
-<hr>
-
-<h2>ประวัติการวิเคราะห์โค้ดของคุณ</h2>
-
-<div class="delete-options">
-    <button id="delete-selected-button" class="btn btn-primary" disabled>🗑️ ลบรายการที่เลือก</button>
-    <form id="clear-all-form" action="{% url 'scp4:clear_scan_history' %}" method="post" onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการล้างประวัติการวิเคราะห์ทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้!');" style="margin: 0;">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-danger">🗑️ ล้างประวัติทั้งหมด</button>
-    </form>
-</div>
-
-{% if scan_results %}
-<ul>
-    {% for result in scan_results|dictsortreversed:"scanned_at" %}
-    <li class="history-list-item {% if result.id == current_scan_id %}current-scan-highlight{% endif %}"
-        data-scan-id="{{ result.id }}">
-        <div class="history-checkbox-wrapper">
-            <input type="checkbox" class="history-checkbox" value="{{ result.id }}">
-            <div>
-                <span class="scan-info-text" style="color: #81c784; font-weight: bold;">🗓️ {{ result.scanned_at|date:"d M Y H:i:s" }}</span><br>
-                <span class="scan-info-text">พบช่องโหว่:
-                    <strong class="{% if result.high_severity_count > 0 %}vuln-high{% elif result.total_vulnerabilities > 0 %}vuln-medium{% else %}vuln-none{% endif %}">
-                        {{ result.total_vulnerabilities }}
-                    </strong> รายการ
-                </span>
+        <div class="scan-header">
+            <h1 class="scan-title">🔍 รายละเอียดการสแกน</h1>
+            <div class="scan-meta">
+                <p>📅 สแกนเมื่อ: {{ scan_result.scanned_at|date:"d M Y H:i:s" }}</p>
+                {% if scan_result.file_name %}
+                    <p>📄 ไฟล์: {{ scan_result.file_name }}</p>
+                {% endif %}
             </div>
         </div>
-        <div style="margin-top: 10px;">
-            {% if result.id != current_scan_id %}
-            <a href="{% url 'scp4:view_scan_result' result.id %}" class="btn view-details-btn">👁️ ดูรายละเอียด</a>
-            {% else %}
-            <span class="btn current-page-indicator">อยู่ในหน้านี้</span>
-            {% endif %}
-            <a href="{% url 'scp4:export_scan_report_pdf' result.id %}" target="_blank" class="btn export-pdf-btn">⬇️ PDF</a>
+
+        <!-- Code Section -->
+        <div class="code-section">
+            <h2 class="section-title">📝 โค้ดที่ส่งวิเคราะห์</h2>
+            <pre class="code-display">{{ code|escape }}</pre>
         </div>
-    </li>
-    {% endfor %}
-</ul>
-{% else %}
-<p>ยังไม่มีผลการสแกน. เริ่มต้นด้วยการวางโค้ดและกดปุ่มวิเคราะห์เลย!</p>
-{% endif %}
-{% endblock %}
 
-{% block extra_scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const checkboxes = document.querySelectorAll('.history-checkbox');
-        const deleteButton = document.getElementById('delete-selected-button');
+        <!-- Results Section -->
+        <div class="results-section">
+            <h2 class="section-title">📊 ผลการวิเคราะห์</h2>
+            
+            {% if ollama_error %}
+                <div class="error-message">
+                    <h3>⚠️ เกิดข้อผิดพลาดกับ AI</h3>
+                    <p>{{ raw_output_text|escape }}</p>
+                </div>
+            {% elif no_vuln_found %}
+                <div class="safe-message">
+                    <h3>✅ ปลอดภัย!</h3>
+                    <p>AI ไม่พบช่องโหว่หรือความเสี่ยงด้านความปลอดภัยที่สำคัญในโค้ดนี้</p>
+                    <small style="opacity: 0.7;">
+                        หมายเหตุ: นี่คือการวิเคราะห์จาก AI และไม่ได้รับประกันความปลอดภัย 100% โปรดตรวจสอบโค้ดด้วยตนเองอีกครั้ง
+                    </small>
+                </div>
+            {% else %}
+                <div class="vulnerabilities-list">
+                    {% for vuln in vulnerabilities %}
+                        <div class="vulnerability-item" data-severity="{{ vuln.severity }}">
+                            <div class="vuln-header">
+                                <h4 style="margin: 0;">{{ vuln.name }}</h4>
+                                <span class="severity-badge">{{ vuln.severity }}</span>
+                            </div>
+                            <div class="vuln-details">
+                                <p><strong>รายละเอียด:</strong> {{ vuln.description }}</p>
+                                <p><strong>วิธีแก้ไข:</strong> {{ vuln.remediation }}</p>
+                                {% if vuln.code_snippet %}
+                                    <div style="margin-top: 15px;">
+                                        <strong>โค้ดที่เกี่ยวข้อง:</strong>
+                                        <pre class="code-display" style="margin-top: 10px; font-size: 0.9em;">{{ vuln.code_snippet|escape }}</pre>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
 
-        function updateDeleteButtonState() {
-            const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
-            deleteButton.disabled = checkedCount === 0;
-        }
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- Stats Summary -->
+        <div class="stats-section">
+            <h3 class="sidebar-title">📈 สรุปผลลัพธ์</h3>
+            <div class="stats-summary">
+                <div class="stat-item">
+                    <span class="stat-label">ช่องโหว่ทั้งหมด:</span>
+                    <span class="stat-value {% if total_vulnerabilities > 0 %}critical{% else %}safe{% endif %}">
+                        {{ total_vulnerabilities }}
+                    </span>
+                </div>
+                {% if high_severity_count > 0 %}
+                <div class="stat-item">
+                    <span class="stat-label">Critical/High:</span>
+                    <span class="stat-value critical">{{ high_severity_count }}</span>
+                </div>
+                {% endif %}
+                {% if medium_severity_count > 0 %}
+                <div class="stat-item">
+                    <span class="stat-label">Medium:</span>
+                    <span class="stat-value medium">{{ medium_severity_count }}</span>
+                </div>
+                {% endif %}
+                {% if low_severity_count > 0 %}
+                <div class="stat-item">
+                    <span class="stat-label">Low:</span>
+                    <span class="stat-value low">{{ low_severity_count }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
 
-        checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', updateDeleteButtonState);
-        });
-
-        deleteButton.addEventListener('click', function() {
-            const selectedIds = Array.from(checkboxes)
-                .filter(cb => cb.checked)
-                .map(cb => cb.value);
-
-            if (selectedIds.length > 0) {
-                if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบ ${selectedIds.length} รายการที่เลือก?`)) {
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = '{% url "scp4:delete_selected_scans" %}'; 
-
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    const csrfTokenInput = document.createElement('input');
-                    csrfTokenInput.type = 'hidden';
-                    csrfTokenInput.name = 'csrfmiddlewaretoken';
-                    csrfTokenInput.value = csrfToken;
-                    form.appendChild(csrfTokenInput);
-
-                    selectedIds.forEach(id => {
-                        const input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = 'scan_ids';
-                        input.value = id;
-                        form.appendChild(input);
-                    });
-
-                    document.body.appendChild(form);
-                    form.submit();
-                }
-            }
-        });
-
-        updateDeleteButtonState();
-    });
-</script>
+        <!-- Other Scans -->
+        <div class="other-scans-section">
+            <h3 class="sidebar-title">📋 การสแกนอื่นๆ</h3>
+            {% if other_scans %}
+                <ul class="other-scans-list">
+                    {% for scan in other_scans %}
+                        <li class="other-scan-item">
+                            <a href="{% url 'scp4:view_scan_result' scan.id %}" class="other-scan-link">
+                                <div class="scan-date">{{ scan.scanned_at|date:"d/m/Y H:i" }}</div>
+                                <div class="scan-summary">
+                                    {% if scan.vulnerabilities.count > 0 %}
+                                        ⚠️ {{ scan.vulnerabilities.count }} ช่องโหว่
+                                    {% else %}
+                                        ✅ ปลอดภัย
+                                    {% endif %}
+                                </div>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="{% url 'scp4:scan_history' %}" style="color: var(--primary-color); text-decoration: none; font-size: 0.9em;">
+                        ดูทั้งหมด →
+                    </a>
+                </div>
+            {% else %}
+                <div class="no-other-scans">
+                    ไม่มีการสแกนอื่น
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock %}
