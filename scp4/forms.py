@@ -31,6 +31,30 @@ class SignUpForm(UserCreationForm):
         })
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    
+    # ใช้ข้อความธรรมดาแทน HTML
+        self.fields['password1'].help_text = (
+            "• รหัสผ่านไม่ควรคล้ายกับข้อมูลส่วนตัวของคุณมากเกินไป\n"
+            "• รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร\n" 
+            "• รหัสผ่านไม่ควรเป็นรหัสผ่านที่ใช้กันทั่วไป\n"
+            "• รหัสผ่านไม่ควรเป็นตัวเลขเพียงอย่างเดียว"
+        )
+    
+        self.fields['password2'].help_text = 'ใส่รหัสผ่านเดิมอีกครั้งเพื่อยืนยัน'
+    
+    # เพิ่ม CSS class และ placeholder
+        self.fields['password1'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'รหัสผ่าน'
+        })
+    
+        self.fields['password2'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'ยืนยันรหัสผ่าน'
+        })
+
     class Meta:
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2')

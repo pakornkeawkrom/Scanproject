@@ -59,6 +59,63 @@ class ScanResult(models.Model):
         verbose_name="Info"
     )
 
+    # 🆕 เพิ่ม Properties เหล่านี้
+    @property
+    def is_completed(self):
+        """
+        ตรวจสอบว่าการสแกนเสร็จสิ้นแล้วหรือไม่
+        ถือว่าเสร็จสิ้นถ้ามีผลการวิเคราะห์จาก AI
+        """
+        return bool(self.analysis_result_raw and self.analysis_result_raw.strip())
+    
+    @property
+    def status_display(self):
+        """แสดงสถานะเป็นภาษาไทย"""
+        return "เสร็จสิ้น" if self.is_completed else "กำลังประมวลผล"
+    
+    @property
+    def status_icon(self):
+        """ไอคอนสถานะ"""
+        return "✅" if self.is_completed else "⏳"
+    
+    @property
+    def status_color(self):
+        """สีสถานะ"""
+        return "#4caf50" if self.is_completed else "#ff9800"
+
+    # Properties ที่มีอยู่แล้วเดิม (ต่อจากโค้ดเดิม)
+    @property
+    def has_high_risk(self):
+        """มีช่องโหว่ระดับสูงหรือร้ายแรงหรือไม่"""
+        return (self.critical_severity_count + self.high_severity_count) > 0
+
+    @property
+    def risk_level(self):
+        """ระดับความเสี่ยงโดยรวม"""
+        if self.critical_severity_count > 0:
+            return "Critical"
+        elif self.high_severity_count > 0:
+            return "High"
+        elif self.medium_severity_count > 0:
+            return "Medium"
+        elif self.low_severity_count > 0:
+            return "Low"
+        else:
+            return "Safe"
+
+    class Meta:
+        verbose_name = "ผลลัพธ์การสแกน"
+        verbose_name_plural = "ผลลัพธ์การสแกน"
+        ordering = ['-scanned_at']
+        indexes = [
+            models.Index(fields=['user', '-scanned_at']),
+            models.Index(fields=['total_vulnerabilities']),
+            models.Index(fields=['scanned_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.scanned_at.strftime('%d/%m/%Y %H:%M')}"
+
     class Meta:
         verbose_name = "ผลลัพธ์การสแกน"
         verbose_name_plural = "ผลลัพธ์การสแกน"

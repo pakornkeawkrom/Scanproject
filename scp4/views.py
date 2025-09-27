@@ -8,6 +8,9 @@ import os
 import sys
 import platform
 from datetime import datetime, timedelta
+from weasyprint import HTML, CSS
+from django.http import HttpResponse
+from django.contrib.staticfiles import finders
 
 # Django core imports
 from django.shortcuts import render, redirect, get_object_or_404
@@ -251,7 +254,7 @@ Return **ONLY** valid JSON in this exact structure:
 
     headers = {'Content-Type': 'application/json'}
     payload = {
-        "model": "deepseek-coder:6.7b",
+        "model": "codellama:7b",
         "prompt": prompt,
         "stream": False,
         "format": "json",
