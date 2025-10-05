@@ -28,13 +28,14 @@ from django.conf import settings
 from django.db.models import Count, Q, Sum
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
+import re
 
 # Django framework imports
 import django
 
 # Project-specific imports
 from .forms import SignUpForm
-from .models import ScanResult, Vulnerability, UserProfile
+from .models import ScanResult, Vulnerability, UserProfile, VulnerabilityKnowledge
 
 # Third-party imports (ให้ตรวจสอบว่าติดตั้งแล้วหรือไม่)
 import requests
@@ -131,6 +132,87 @@ def signup_view(request):
         form = SignUpForm()
     return render(request, 'scp4/signup.html', {'form': form})
 
+def retrieve_relevant_vulnerabilities(code):
+    """
+    ค้นหาช่องโหว่ที่เกี่ยวข้องจาก Knowledge Base (RAG)
+    
+    Args:
+        code (str): โค้ดที่ต้องการวิเคราะห์
+    
+    Returns:
+        QuerySet: ช่องโหว่ที่เกี่ยวข้องจาก Knowledge Base
+    """
+    code_lower = code.lower()
+    relevant_vulns = []
+    
+    # ดึงช่องโหว่ทั้งหมดที่ active
+    all_knowledge = VulnerabilityKnowledge.objects.filter(is_active=True)
+    
+    # คำนวณ relevance score สำหรับแต่ละ knowledge
+    scored_vulns = []
+    
+    for knowledge in all_knowledge:
+        score = 0
+        keywords = knowledge.keywords_list
+        
+        # นับจำนวน keywords ที่พบในโค้ด
+        for keyword in keywords:
+            if keyword in code_lower:
+                score += code_lower.count(keyword)
+        
+        # ถ้ามี score > 0 แสดงว่าเกี่ยวข้อง
+        if score > 0:
+            scored_vulns.append((knowledge, score))
+    
+    # เรียงตาม score จากมากไปน้อย
+    scored_vulns.sort(key=lambda x: x[1], reverse=True)
+    
+    # คืนค่าแค่ top 5
+    return [vuln for vuln, score in scored_vulns[:5]]
+
+
+def format_rag_context(relevant_vulnerabilities):
+    """
+    สร้าง RAG context string จากข้อมูลที่ค้นหาได้
+    
+    Args:
+        relevant_vulnerabilities (list): รายการ VulnerabilityKnowledge objects
+    
+    Returns:
+        str: RAG context ที่จัดรูปแบบแล้ว
+    """
+    if not relevant_vulnerabilities:
+        return ""
+    
+    rag_context = "\n\n## 📚 KNOWLEDGE BASE (อ้างอิงจากฐานข้อมูลของระบบ)\n\n"
+    rag_context += "ระบบพบว่าโค้ดของคุณอาจเกี่ยวข้องกับช่องโหว่เหล่านี้จาก Knowledge Base:\n\n"
+    
+    for i, vuln in enumerate(relevant_vulnerabilities, 1):
+        rag_context += f"### {i}. {vuln.name}"
+        
+        if vuln.cwe_id:
+            rag_context += f" ({vuln.cwe_id})"
+        if vuln.owasp_category:
+            rag_context += f" - {vuln.owasp_category}"
+        
+        rag_context += f"\n**Severity:** {vuln.severity}\n\n"
+        rag_context += f"**Description:**\n{vuln.description}\n\n"
+        rag_context += f"**Impact:**\n{vuln.impact}\n\n"
+        rag_context += f"**Remediation:**\n{vuln.remediation}\n\n"
+        
+        if vuln.vulnerable_code_example:
+            rag_context += f"**Vulnerable Code Example:**\n```\n{vuln.vulnerable_code_example}\n```\n\n"
+        
+        if vuln.secure_code_example:
+            rag_context += f"**Secure Code Example:**\n```\n{vuln.secure_code_example}\n```\n\n"
+        
+        if vuln.reference_url:
+            rag_context += f"**Reference:** {vuln.reference_url}\n\n"
+        
+        rag_context += "---\n\n"
+    
+    return rag_context
+
 @csrf_exempt
 @login_required
 def analyze_code_api(request):
@@ -146,16 +228,37 @@ def analyze_code_api(request):
     if not code:
         return JsonResponse({'error': 'Code input cannot be empty.'}, status=400)
 
+    # 🆕 ขั้นตอนที่ 1: RAG - ค้นหาข้อมูลที่เกี่ยวข้องจาก Knowledge Base
+    print("🔍 กำลังค้นหาข้อมูลจาก Knowledge Base...")
+    relevant_vulnerabilities = retrieve_relevant_vulnerabilities(code)
+    
+    # 🆕 ขั้นตอนที่ 2: สร้าง RAG context
+    rag_context = format_rag_context(relevant_vulnerabilities)
+    
+    # บันทึกจำนวน knowledge ที่ใช้
+    knowledge_count = len(relevant_vulnerabilities)
+    
+    if knowledge_count > 0:
+        print(f"✅ พบข้อมูลที่เกี่ยวข้อง {knowledge_count} รายการ:")
+        for vuln in relevant_vulnerabilities:
+            print(f"   - {vuln.name} ({vuln.cwe_id or 'N/A'})")
+    else:
+        print("ℹ️ ไม่พบข้อมูลที่เกี่ยวข้องใน Knowledge Base")
+
     ollama_api_url = 'http://localhost:11434/api/generate'
 
+    # 🆕 ขั้นตอนที่ 3: สร้าง Prompt ที่มี RAG context
     prompt = f"""
 You are an expert cybersecurity code auditor with 15+ years of experience in penetration testing and secure code review. Your specialty is identifying complex, multi-layered security vulnerabilities that automated tools often miss.
 
+{rag_context}
+
 ## ANALYSIS METHODOLOGY
-1. **Static Analysis**: Examine code flow, data paths, and trust boundaries
-2. **Dynamic Thinking**: Consider runtime scenarios and edge cases  
-3. **Attack Vector Mapping**: Think like an attacker - what would you target first?
-4. **Business Logic**: Look beyond technical flaws to logical vulnerabilities
+1. **Cross-Reference with Knowledge Base**: Use the vulnerability information from the Knowledge Base above to identify similar patterns in the code
+2. **Static Analysis**: Examine code flow, data paths, and trust boundaries
+3. **Dynamic Thinking**: Consider runtime scenarios and edge cases  
+4. **Attack Vector Mapping**: Think like an attacker - what would you target first?
+5. **Business Logic**: Look beyond technical flaws to logical vulnerabilities
 
 ## CRITICAL VULNERABILITY CATEGORIES TO EXAMINE
 
@@ -213,7 +316,7 @@ Return **ONLY** valid JSON in this exact structure:
 
 ```json
 {{
-    "analysis_summary": "Brief overall assessment focusing on the most critical findings and attack vectors.",
+    "analysis_summary": "Brief overall assessment focusing on the most critical findings and attack vectors. Mention if Knowledge Base patterns were found.",
     "vulnerabilities": [
         {{
             "name": "Precise vulnerability name (e.g., 'SQL Injection via User Search', 'Reflected XSS in Error Messages')",
@@ -237,6 +340,7 @@ Return **ONLY** valid JSON in this exact structure:
 
 ## IMPORTANT GUIDELINES
 
+- **Use Knowledge Base**: Reference the vulnerability patterns from the Knowledge Base when applicable
 - **Be specific**: Don't just say "SQL Injection" - say "SQL Injection in user search via string concatenation on line X"
 - **Think holistically**: Look for vulnerability chains and combined attack scenarios
 - **Consider context**: A vulnerability in admin-only code is different from public-facing code  
@@ -249,7 +353,7 @@ Return **ONLY** valid JSON in this exact structure:
 {code}
 ```
 
-**Remember**: Your job is to find vulnerabilities that could realistically be exploited by attackers. Think like a penetration tester, not just a static analysis tool.
+**Remember**: Your job is to find vulnerabilities that could realistically be exploited by attackers. Use the Knowledge Base information to enhance your analysis. Think like a penetration tester, not just a static analysis tool.
 """
 
     headers = {'Content-Type': 'application/json'}
@@ -266,29 +370,31 @@ Return **ONLY** valid JSON in this exact structure:
     }
 
     try:
-        print(f"Attempting to connect to Ollama at {ollama_api_url} with model '{payload['model']}'...")
-        print("DeepSeek Coder กำลังประมวลผล อาจใช้เวลา 3-5 นาที...")
+        print(f"🤖 กำลังส่งโค้ดไปวิเคราะห์ที่ Ollama (codellama:7b)...")
+        print(f"📊 ใช้ข้อมูลจาก Knowledge Base: {knowledge_count} รายการ")
+        print("⏳ กรุณารอสักครู่ อาจใช้เวลา 3-5 นาที...")
         
-        # เพิ่ม timeout เป็น 10 นาที (600 วินาที) สำหรับโมเดลใหญ่
         response = requests.post(
             ollama_api_url, 
             headers=headers, 
             json=payload, 
-            timeout=600  # เพิ่มจาก 300 เป็น 600 วินาที (10 นาที)
+            timeout=600
         )
         response.raise_for_status()
         ollama_data = response.json()
         
     except requests.exceptions.Timeout:
         timeout_error_msg = (
-            f"โมเดล DeepSeek Coder ใช้เวลาวิเคราะห์นานเกินไป (เกิน 10 นาที). "
-            f"แนะนำให้ลองใช้โค้ดที่สั้นกว่านี้ หรือเปลี่ยนเป็นโมเดลที่เล็กกว่า เช่น deepseek-coder:1.3b"
+            f"โมเดล CodeLlama ใช้เวลาวิเคราะห์นานเกินไป (เกิน 10 นาที). "
+            f"แนะนำให้ลองใช้โค้ดที่สั้นกว่านี้"
         )
         scan_result = ScanResult.objects.create(
             user=request.user,
             scanned_at=timezone.now(),
             scanned_code=code,
             analysis_result_raw=timeout_error_msg,
+            rag_context_used=rag_context if knowledge_count > 0 else "",
+            knowledge_base_count=knowledge_count,
             total_vulnerabilities=0,
             critical_severity_count=0,
             high_severity_count=0,
@@ -302,13 +408,15 @@ Return **ONLY** valid JSON in this exact structure:
     except requests.exceptions.ConnectionError as e:
         connection_error_msg = (
             f"ไม่สามารถเชื่อมต่อกับ Ollama ได้: {e}. "
-            f"กรุณาตรวจสอบว่า Ollama server กำลังทำงานอยู่และโมเดล '{payload.get('model')}' พร้อมใช้งาน"
+            f"กรุณาตรวจสอบว่า Ollama server กำลังทำงานอยู่และโมเดล 'codellama:7b' พร้อมใช้งาน"
         )
         scan_result = ScanResult.objects.create(
             user=request.user,
             scanned_at=timezone.now(),
             scanned_code=code,
             analysis_result_raw=connection_error_msg,
+            rag_context_used=rag_context if knowledge_count > 0 else "",
+            knowledge_base_count=knowledge_count,
             total_vulnerabilities=0,
             critical_severity_count=0,
             high_severity_count=0,
@@ -322,13 +430,15 @@ Return **ONLY** valid JSON in this exact structure:
     except requests.exceptions.RequestException as e:
         ollama_error_msg = (
             f"Failed to connect to Ollama AI: {e}. "
-            f"Please ensure the Ollama server is running and the specified model ('{payload.get('model')}') is available."
+            f"Please ensure the Ollama server is running and the specified model is available."
         )
         scan_result = ScanResult.objects.create(
             user=request.user,
             scanned_at=timezone.now(),
             scanned_code=code,
             analysis_result_raw=ollama_error_msg,
+            rag_context_used=rag_context if knowledge_count > 0 else "",
+            knowledge_base_count=knowledge_count,
             total_vulnerabilities=0,
             critical_severity_count=0,
             high_severity_count=0,
@@ -387,12 +497,14 @@ Return **ONLY** valid JSON in this exact structure:
         elif sev == 'Informational':
             info_count += 1
 
-    # สร้างบันทึก scan result
+    # 🆕 สร้างบันทึก scan result พร้อม RAG information
     scan_result = ScanResult.objects.create(
         user=request.user,
         scanned_at=timezone.now(),
         scanned_code=code,
         analysis_result_raw=raw_output_text,
+        rag_context_used=rag_context if knowledge_count > 0 else "",
+        knowledge_base_count=knowledge_count,
         total_vulnerabilities=len(parsed_vulnerabilities),
         critical_severity_count=critical_count,
         high_severity_count=high_count,
@@ -415,6 +527,8 @@ Return **ONLY** valid JSON in this exact structure:
             remediation=vuln.get('remediation', 'No remediation steps provided.'),
             code_snippet=vuln.get('code_snippet', '')
         )
+
+    print(f"✅ การวิเคราะห์เสร็จสิ้น: พบ {len(parsed_vulnerabilities)} ช่องโหว่")
 
     html_content = render_analysis_result_partial(
         request,

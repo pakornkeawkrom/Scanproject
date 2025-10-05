@@ -6,7 +6,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.contrib import messages
-from .models import ScanResult, Vulnerability, UserProfile
+from .models import ScanResult, Vulnerability, UserProfile, VulnerabilityKnowledge
 
 # ✅ เพิ่มการจัดการ User model อย่างปลอดภัย
 admin.site.unregister(User)
@@ -17,135 +17,250 @@ class SecureUserAdmin(BaseUserAdmin):
     """
     
     def has_delete_permission(self, request, obj=None):
-        """
-        กำหนดสิทธิ์การลบอย่างเข้มงวด
-        """
-        # Superuser ลบได้ทุกคน ยกเว้นตัวเอง
+        """กำหนดสิทธิ์การลบอย่างเข้มงวด"""
         if request.user.is_superuser:
             if obj and obj.id == request.user.id:
-                return False  # ไม่ให้ลบตัวเอง
+                return False
             return True
         
-        # Staff ลบได้แค่ user ธรรมดา
         if request.user.is_staff:
             if obj:
-                # ถ้ามี obj แล้ว ตรวจสอบว่าเป็น superuser/staff หรือไม่
                 if obj.is_superuser or obj.is_staff:
                     return False
                 return True
             else:
-                # ถ้า obj เป็น None (เรียกเพื่อแสดงปุ่ม) ให้ return True
-                # แต่จะตรวจสอบอีกครั้งใน delete_model()
                 return True
         
         return False
     
     def delete_model(self, request, obj):
-        """
-        ตรวจสอบก่อนลบ - ถึงแม้จะผ่าน URL มาก็ตาม
-        """
+        """ตรวจสอบก่อนลบ"""
         if not self.has_delete_permission(request, obj):
-            messages.error(request, f"❌ คุณไม่มีสิทธิ์ลบผู้ใช้ {obj.username}")
+            messages.error(request, f"คุณไม่มีสิทธิ์ลบผู้ใช้ {obj.username}")
             raise PermissionDenied("คุณไม่มีสิทธิ์ลบผู้ใช้นี้")
         
-        messages.success(request, f"✅ ลบผู้ใช้ {obj.username} เรียบร้อยแล้ว")
+        messages.success(request, f"ลบผู้ใช้ {obj.username} เรียบร้อยแล้ว")
         super().delete_model(request, obj)
     
     def delete_queryset(self, request, queryset):
-        """
-        ตรวจสอบการลบหลายคนพร้อมกัน
-        """
+        """ตรวจสอบการลบหลายคนพร้อมกัน"""
         forbidden_users = []
         for obj in queryset:
             if not self.has_delete_permission(request, obj):
                 forbidden_users.append(obj.username)
         
         if forbidden_users:
-            messages.error(request, f"❌ คุณไม่มีสิทธิ์ลบผู้ใช้: {', '.join(forbidden_users)}")
+            messages.error(request, f"คุณไม่มีสิทธิ์ลบผู้ใช้: {', '.join(forbidden_users)}")
             raise PermissionDenied("คุณไม่มีสิทธิ์ลบผู้ใช้บางคน")
         
         super().delete_queryset(request, queryset)
     
     def get_readonly_fields(self, request, obj=None):
-        """
-        กำหนด field ที่ staff แก้ไขไม่ได้
-        """
+        """กำหนด field ที่ staff แก้ไขไม่ได้"""
         readonly_fields = list(super().get_readonly_fields(request, obj))
         
-        # ✅ ป้องกัน staff เปลี่ยนสิทธิ์ของตัวเองและคนอื่น
         if request.user.is_staff and not request.user.is_superuser:
             if obj:
-                # ถ้าแก้ไขตัวเอง - ห้ามเปลี่ยนสิทธิ์
                 if obj.id == request.user.id:
                     readonly_fields.extend(['is_superuser', 'is_staff', 'user_permissions', 'groups'])
-                
-                # ถ้าแก้ไข superuser คนอื่น - ห้ามแก้ไขสิทธิ์
                 elif obj.is_superuser:
                     readonly_fields.extend(['is_superuser', 'is_staff', 'user_permissions', 'groups'])
-                
-                # ถ้าแก้ไข staff คนอื่น - ห้ามแก้ไขสิทธิ์
                 elif obj.is_staff:
                     readonly_fields.extend(['is_superuser', 'is_staff', 'user_permissions', 'groups'])
-                
-                # ถ้าแก้ไข user ธรรมดา - ห้ามให้สิทธิ์
                 else:
                     readonly_fields.extend(['is_superuser', 'is_staff', 'user_permissions', 'groups'])
         
         return readonly_fields
     
     def save_model(self, request, obj, form, change):
-        """
-        เพิ่มการตรวจสอบก่อนบันทึก - ป้องกัน staff เปลี่ยนสิทธิ์
-        """
-        # ถ้าเป็น superuser ทำอะไรได้หมด
+        """เพิ่มการตรวจสอบก่อนบันทึก"""
         if request.user.is_superuser:
             super().save_model(request, obj, form, change)
             return
         
-        # ถ้าเป็น staff
         if request.user.is_staff:
-            # ถ้าแก้ไขตัวเอง
             if obj.id == request.user.id:
-                # ห้ามเปลี่ยนสิทธิ์ตัวเอง
                 if obj.is_superuser or not obj.is_staff:
-                    messages.error(request, "❌ คุณไม่สามารถเปลี่ยนสิทธิ์ของตัวเองได้")
+                    messages.error(request, "คุณไม่สามารถเปลี่ยนสิทธิ์ของตัวเองได้")
                     raise PermissionDenied("ไม่สามารถเปลี่ยนสิทธิ์ตัวเองได้")
-            
-            # ถ้าแก้ไขคนอื่น
             else:
-                # ห้ามเปลี่ยนใครให้เป็น superuser หรือ staff
                 if obj.is_superuser or obj.is_staff:
-                    # ยกเว้นถ้าคนนั้นเป็น staff/superuser อยู่แล้ว
-                    if change:  # กรณีแก้ไข
+                    if change:
                         original_user = User.objects.get(pk=obj.pk)
-                        # ถ้าเดิมไม่ใช่ staff/superuser แต่จะเปลี่ยนเป็น
                         if (not original_user.is_staff and obj.is_staff) or \
                            (not original_user.is_superuser and obj.is_superuser):
-                            messages.error(request, "❌ คุณไม่สามารถให้สิทธิ์ admin แก่ผู้ใช้คนอื่นได้")
+                            messages.error(request, "คุณไม่สามารถให้สิทธิ์ admin แก่ผู้ใช้คนอื่นได้")
                             raise PermissionDenied("ไม่สามารถให้สิทธิ์ admin แก่ผู้ใช้คนอื่นได้")
-                    else:  # กรณีสร้างใหม่
-                        # สร้างใหม่แต่ให้เป็น staff/superuser
+                    else:
                         if obj.is_staff or obj.is_superuser:
-                            messages.error(request, "❌ คุณไม่สามารถสร้างผู้ใช้ที่มีสิทธิ์ admin ได้")
+                            messages.error(request, "คุณไม่สามารถสร้างผู้ใช้ที่มีสิทธิ์ admin ได้")
                             raise PermissionDenied("ไม่สามารถสร้างผู้ใช้ที่มีสิทธิ์ admin ได้")
         
         super().save_model(request, obj, form, change)
     
     def has_change_permission(self, request, obj=None):
-        """
-        กำหนดสิทธิ์การแก้ไข
-        """
+        """กำหนดสิทธิ์การแก้ไข"""
         if request.user.is_superuser:
             return True
         
-        # Staff แก้ไข superuser ไม่ได้
         if request.user.is_staff and obj and obj.is_superuser:
             return False
         
         return super().has_change_permission(request, obj)
 
-# ✅ Register User ใหม่ด้วย Secure Admin
 admin.site.register(User, SecureUserAdmin)
+
+
+@admin.register(VulnerabilityKnowledge)
+class VulnerabilityKnowledgeAdmin(admin.ModelAdmin):
+    """จัดการฐานความรู้ช่องโหว่ (Knowledge Base สำหรับ RAG)"""
+    
+    list_display = [
+        'name',
+        'cwe_id',
+        'severity_badge',
+        'owasp_category',
+        'is_active',
+        'has_examples',
+        'created_at'
+    ]
+    
+    list_filter = [
+        'severity',
+        'is_active',
+        'owasp_category',
+        'created_at'
+    ]
+    
+    search_fields = [
+        'name',
+        'cwe_id',
+        'description',
+        'keywords',
+        'owasp_category'
+    ]
+    
+    list_editable = ['is_active']
+    
+    readonly_fields = ['created_at', 'updated_at', 'keywords_display']
+    
+    ordering = ['name']
+    
+    fieldsets = (
+        ('ข้อมูลหลัก', {
+            'fields': (
+                'name',
+                'cwe_id',
+                'owasp_category',
+                'severity',
+                'is_active'
+            )
+        }),
+        ('คำอธิบาย', {
+            'fields': (
+                'description',
+                'impact',
+                'remediation'
+            )
+        }),
+        ('ตัวอย่างโค้ด', {
+            'fields': (
+                'vulnerable_code_example',
+                'secure_code_example'
+            ),
+            'classes': ('collapse',)
+        }),
+        ('การค้นหา (RAG)', {
+            'fields': (
+                'keywords',
+                'keywords_display'
+            ),
+            'description': 'คำสำคัญสำหรับระบบ RAG ค้นหา (คั่นด้วยเครื่องหมายจุลภาค)'
+        }),
+        ('ข้อมูลอ้างอิง', {
+            'fields': ('reference_url',),
+            'classes': ('collapse',)
+        }),
+        ('ข้อมูลระบบ', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def severity_badge(self, obj):
+        """Badge แสดง severity"""
+        colors = {
+            'Critical': '#dc3545',
+            'High': '#fd7e14',
+            'Medium': '#ffc107',
+            'Low': '#17a2b8',
+            'Informational': '#6c757d'
+        }
+        color = colors.get(obj.severity, '#6c757d')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: bold;">{}</span>',
+            color,
+            obj.severity
+        )
+    severity_badge.short_description = 'ระดับความรุนแรง'
+    severity_badge.admin_order_field = 'severity'
+    
+    def has_examples(self, obj):
+        """แสดงว่ามีตัวอย่างโค้ดหรือไม่"""
+        has_vuln = bool(obj.vulnerable_code_example)
+        has_secure = bool(obj.secure_code_example)
+        
+        if has_vuln and has_secure:
+            return format_html('<span style="color: green;">✓ ครบ</span>')
+        elif has_vuln or has_secure:
+            return format_html('<span style="color: orange;">⚠ บางส่วน</span>')
+        else:
+            return format_html('<span style="color: red;">✗ ไม่มี</span>')
+    has_examples.short_description = 'ตัวอย่างโค้ด'
+    
+    def keywords_display(self, obj):
+        """แสดง keywords เป็น badges"""
+        if not obj.keywords:
+            return "ไม่มีคำสำคัญ"
+        
+        keywords_list = obj.keywords_list
+        badges = []
+        for keyword in keywords_list[:10]:  # แสดงแค่ 10 คำแรก
+            badges.append(
+                f'<span style="background: #e3f2fd; color: #1976d2; padding: 2px 6px; border-radius: 3px; font-size: 11px; margin: 2px;">{keyword}</span>'
+            )
+        
+        if len(keywords_list) > 10:
+            badges.append(f'<span style="color: #666;">...และอีก {len(keywords_list) - 10} คำ</span>')
+        
+        return format_html(' '.join(badges))
+    keywords_display.short_description = 'คำสำคัญที่ใช้ค้นหา (RAG)'
+    
+    actions = ['activate_knowledge', 'deactivate_knowledge', 'duplicate_knowledge']
+    
+    def activate_knowledge(self, request, queryset):
+        """เปิดใช้งานความรู้"""
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'เปิดใช้งาน {updated} รายการ')
+    activate_knowledge.short_description = 'เปิดใช้งานที่เลือก'
+    
+    def deactivate_knowledge(self, request, queryset):
+        """ปิดใช้งานความรู้"""
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'ปิดใช้งาน {updated} รายการ')
+    deactivate_knowledge.short_description = 'ปิดใช้งานที่เลือก'
+    
+    def duplicate_knowledge(self, request, queryset):
+        """ทำซ้ำความรู้"""
+        count = 0
+        for obj in queryset:
+            obj.pk = None
+            obj.name = f"{obj.name} (Copy)"
+            obj.save()
+            count += 1
+        self.message_user(request, f'ทำซ้ำ {count} รายการ')
+    duplicate_knowledge.short_description = 'ทำซ้ำที่เลือก'
+
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
@@ -204,6 +319,7 @@ class ScanResultAdmin(admin.ModelAdmin):
         'user_link', 
         'scanned_at',
         'ai_model_used',
+        'rag_indicator',
         'vulnerability_summary',
         'risk_level_badge',
         'total_vulnerabilities'
@@ -214,6 +330,7 @@ class ScanResultAdmin(admin.ModelAdmin):
         'total_vulnerabilities',
         'critical_severity_count',
         'high_severity_count',
+        'knowledge_base_count',
         'user'
     ]
     search_fields = [
@@ -225,7 +342,8 @@ class ScanResultAdmin(admin.ModelAdmin):
     readonly_fields = [
         'scanned_at', 
         'vulnerability_counts_display',
-        'code_preview'
+        'code_preview',
+        'rag_info_display'
     ]
     date_hierarchy = 'scanned_at'
     inlines = [VulnerabilityInline]
@@ -233,6 +351,10 @@ class ScanResultAdmin(admin.ModelAdmin):
     fieldsets = (
         ('ข้อมูลการสแกน', {
             'fields': ('user', 'scanned_at', 'ai_model_used')
+        }),
+        ('ข้อมูล RAG', {
+            'fields': ('rag_info_display', 'knowledge_base_count', 'rag_context_used'),
+            'classes': ('collapse',)
         }),
         ('โค้ดที่สแกน', {
             'fields': ('code_preview', 'scanned_code'),
@@ -259,6 +381,32 @@ class ScanResultAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('user').prefetch_related('vulnerabilities')
+
+    def rag_indicator(self, obj):
+        """แสดง indicator ว่าใช้ RAG หรือไม่"""
+        if obj.knowledge_base_count > 0:
+            return format_html(
+                '<span style="background: #4caf50; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px;">RAG: {}</span>',
+                obj.knowledge_base_count
+            )
+        else:
+            return format_html('<span style="color: #999;">ไม่ใช้ RAG</span>')
+    rag_indicator.short_description = 'RAG'
+    rag_indicator.admin_order_field = 'knowledge_base_count'
+    
+    def rag_info_display(self, obj):
+        """แสดงข้อมูล RAG แบบละเอียด"""
+        if obj.knowledge_base_count == 0:
+            return format_html('<p style="color: #999;">ไม่มีการใช้ข้อมูลจาก Knowledge Base</p>')
+        
+        return format_html(
+            '<div style="background: #f0f8ff; padding: 10px; border-radius: 4px; border-left: 3px solid #4caf50;">'
+            '<strong>ใช้ข้อมูลจาก Knowledge Base: {} รายการ</strong><br>'
+            '<small style="color: #666;">ระบบดึงข้อมูลช่องโหว่ที่เกี่ยวข้องมาช่วยในการวิเคราะห์</small>'
+            '</div>',
+            obj.knowledge_base_count
+        )
+    rag_info_display.short_description = 'ข้อมูล RAG'
 
     def user_link(self, obj):
         """ลิงก์ไปยังผู้ใช้"""
@@ -366,7 +514,6 @@ class ScanResultAdmin(admin.ModelAdmin):
     def mark_as_reviewed(self, request, queryset):
         """ทำเครื่องหมายว่าตรวจสอบแล้ว"""
         count = queryset.count()
-        # สามารถเพิ่ม field reviewed_at ใน model ได้
         self.message_user(request, f'ทำเครื่องหมาย {count} รายการว่าตรวจสอบแล้ว')
     mark_as_reviewed.short_description = 'ทำเครื่องหมายว่าตรวจสอบแล้ว'
 

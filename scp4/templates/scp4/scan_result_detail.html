@@ -17,6 +17,8 @@
         --medium-color: #ffc107;
         --low-color: #17a2b8;
         --safe-color: #28a745;
+        --rag-bg: #1a3a1a;
+        --rag-border: #4CAF50;
     }
 
     body {
@@ -107,6 +109,83 @@
     .scan-meta {
         color: var(--secondary-color);
         font-size: 1em;
+    }
+
+    /* RAG Info Styles */
+    .rag-info-box {
+        background: linear-gradient(135deg, var(--rag-bg) 0%, #0d2d0d 100%);
+        border: 2px solid var(--rag-border);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 25px 0;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .rag-info-box::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 5px;
+        height: 100%;
+        background: linear-gradient(180deg, var(--rag-border), transparent);
+    }
+
+    .rag-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 15px;
+        font-size: 1.1em;
+        font-weight: 600;
+        color: var(--rag-border);
+    }
+
+    .rag-icon {
+        width: 28px;
+        height: 28px;
+        background: var(--rag-border);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #000;
+        font-weight: bold;
+        font-size: 1.1em;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.9; }
+    }
+
+    .rag-description {
+        color: #b8e6b8;
+        font-size: 0.95em;
+        line-height: 1.6;
+        margin-bottom: 12px;
+    }
+
+    .rag-count-badge {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(76, 175, 80, 0.2);
+        border: 1px solid var(--rag-border);
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        color: var(--rag-border);
+        font-size: 0.9em;
+        margin-top: 10px;
+    }
+
+    .rag-count-badge .count {
+        font-size: 1.3em;
+        margin: 0 5px;
+        color: #fff;
     }
     
     .section-title {
@@ -249,6 +328,7 @@
     .stat-value.medium { color: var(--medium-color); }
     .stat-value.low { color: var(--low-color); }
     .stat-value.safe { color: var(--safe-color); }
+    .stat-value.rag { color: var(--rag-border); }
     
     .other-scans-list {
         list-style: none;
@@ -343,6 +423,25 @@
             </div>
         </div>
 
+        <!-- RAG Information Box -->
+        {% if scan_result.knowledge_base_count > 0 %}
+        <div class="rag-info-box">
+            <div class="rag-header">
+                <div class="rag-icon">🤖</div>
+                <span>ระบบ RAG (Retrieval-Augmented Generation)</span>
+            </div>
+            <div class="rag-description">
+                การวิเคราะห์นี้ใช้เทคโนโลยี RAG โดยดึงข้อมูลช่องโหว่มาตรฐานจาก Knowledge Base (OWASP/CWE) 
+                มาช่วยเสริมการวิเคราะห์ของ AI ทำให้ผลลัพธ์แม่นยำและครบถ้วนยิ่งขึ้น
+            </div>
+            <div class="rag-count-badge">
+                📚 ใช้ข้อมูลจาก Knowledge Base: 
+                <span class="count">{{ scan_result.knowledge_base_count }}</span> 
+                รายการ
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Code Section -->
         <div class="code-section">
             <h2 class="section-title">📝 โค้ดที่ส่งวิเคราะห์</h2>
@@ -419,6 +518,12 @@
                 <div class="stat-item">
                     <span class="stat-label">Low:</span>
                     <span class="stat-value low">{{ low_severity_count }}</span>
+                </div>
+                {% endif %}
+                {% if scan_result.knowledge_base_count > 0 %}
+                <div class="stat-item">
+                    <span class="stat-label">🤖 RAG Data:</span>
+                    <span class="stat-value rag">{{ scan_result.knowledge_base_count }} รายการ</span>
                 </div>
                 {% endif %}
             </div>

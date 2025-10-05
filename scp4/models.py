@@ -3,6 +3,119 @@ from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 
+class VulnerabilityKnowledge(models.Model):
+    """
+    ฐานความรู้ช่องโหว่ (Knowledge Base สำหรับ RAG)
+    เก็บข้อมูลมาตรฐานจาก OWASP/CWE ที่คุณป้อนเอง
+    """
+    SEVERITY_CHOICES = [
+        ('Critical', 'Critical'),
+        ('High', 'High'),
+        ('Medium', 'Medium'),
+        ('Low', 'Low'),
+        ('Informational', 'Informational'),
+    ]
+    
+    # ข้อมูลหลัก
+    name = models.CharField(
+        max_length=255, 
+        unique=True,
+        verbose_name="ชื่อช่องโหว่",
+        help_text="เช่น SQL Injection, XSS, CSRF"
+    )
+    cwe_id = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name="CWE ID",
+        help_text="เช่น CWE-89, CWE-79"
+    )
+    owasp_category = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="OWASP Category",
+        help_text="เช่น A03:2021 - Injection"
+    )
+    
+    # คำอธิบายและวิธีแก้
+    description = models.TextField(
+        verbose_name="คำอธิบายช่องโหว่",
+        help_text="อธิบายว่าช่องโหว่นี้คืออะไร เกิดจากอะไร"
+    )
+    impact = models.TextField(
+        verbose_name="ผลกระทบ",
+        help_text="อธิบายว่าถ้าถูกโจมตีจะเกิดอะไรขึ้น"
+    )
+    remediation = models.TextField(
+        verbose_name="วิธีแก้ไข",
+        help_text="แนะนำวิธีป้องกันและแก้ไข"
+    )
+    
+    # ตัวอย่างโค้ดที่มีช่องโหว่และโค้ดที่ปลอดภัย
+    vulnerable_code_example = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="ตัวอย่างโค้ดที่มีช่องโหว่"
+    )
+    secure_code_example = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="ตัวอย่างโค้ดที่ปลอดภัย"
+    )
+    
+    # Keywords สำหรับการค้นหา
+    keywords = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="คำสำคัญ",
+        help_text="คำสำคัญแยกด้วยเครื่องหมายจุลภาค เช่น sql,query,database,injection"
+    )
+    
+    severity = models.CharField(
+        max_length=20,
+        choices=SEVERITY_CHOICES,
+        default='Medium',
+        verbose_name="ระดับความรุนแรงทั่วไป"
+    )
+    
+    # ข้อมูลอ้างอิง
+    reference_url = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name="URL อ้างอิง"
+    )
+    
+    # ข้อมูลเพิ่มเติม
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="ใช้งาน",
+        help_text="เปิด/ปิดการใช้งานในระบบ RAG"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "ฐานความรู้ช่องโหว่"
+        verbose_name_plural = "ฐานความรู้ช่องโหว่"
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['name']),
+            models.Index(fields=['cwe_id']),
+            models.Index(fields=['is_active']),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} ({self.cwe_id or 'No CWE'})"
+    
+    @property
+    def keywords_list(self):
+        """แปลง keywords string เป็น list"""
+        if self.keywords:
+            return [k.strip().lower() for k in self.keywords.split(',')]
+        return []
+
+
 class ScanResult(models.Model):
     """
     ผลลัพธ์การสแกนโค้ดแต่ละครั้งของผู้ใช้
@@ -29,8 +142,20 @@ class ScanResult(models.Model):
     )
     ai_model_used = models.CharField(
         max_length=100, 
-        default="deepseek-coder:6.7b",
+        default="codellama:7b",
         verbose_name="AI Model ที่ใช้"
+    )
+    
+    # RAG Information
+    rag_context_used = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="ข้อมูล RAG ที่ใช้",
+        help_text="บันทึกว่าใช้ข้อมูลจาก Knowledge Base อะไรบ้าง"
+    )
+    knowledge_base_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="จำนวนข้อมูลจาก Knowledge Base ที่ใช้"
     )
 
     # Vulnerability Statistics
@@ -59,13 +184,9 @@ class ScanResult(models.Model):
         verbose_name="Info"
     )
 
-    # 🆕 เพิ่ม Properties เหล่านี้
     @property
     def is_completed(self):
-        """
-        ตรวจสอบว่าการสแกนเสร็จสิ้นแล้วหรือไม่
-        ถือว่าเสร็จสิ้นถ้ามีผลการวิเคราะห์จาก AI
-        """
+        """ตรวจสอบว่าการสแกนเสร็จสิ้นแล้วหรือไม่"""
         return bool(self.analysis_result_raw and self.analysis_result_raw.strip())
     
     @property
@@ -83,7 +204,6 @@ class ScanResult(models.Model):
         """สีสถานะ"""
         return "#4caf50" if self.is_completed else "#ff9800"
 
-    # Properties ที่มีอยู่แล้วเดิม (ต่อจากโค้ดเดิม)
     @property
     def has_high_risk(self):
         """มีช่องโหว่ระดับสูงหรือร้ายแรงหรือไม่"""
@@ -115,38 +235,6 @@ class ScanResult(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.scanned_at.strftime('%d/%m/%Y %H:%M')}"
-
-    class Meta:
-        verbose_name = "ผลลัพธ์การสแกน"
-        verbose_name_plural = "ผลลัพธ์การสแกน"
-        ordering = ['-scanned_at']
-        indexes = [
-            models.Index(fields=['user', '-scanned_at']),
-            models.Index(fields=['total_vulnerabilities']),
-            models.Index(fields=['scanned_at']),
-        ]
-
-    def __str__(self):
-        return f"{self.user.username} - {self.scanned_at.strftime('%d/%m/%Y %H:%M')}"
-
-    @property
-    def has_high_risk(self):
-        """มีช่องโหว่ระดับสูงหรือร้ายแรงหรือไม่"""
-        return (self.critical_severity_count + self.high_severity_count) > 0
-
-    @property
-    def risk_level(self):
-        """ระดับความเสี่ยงโดยรวม"""
-        if self.critical_severity_count > 0:
-            return "Critical"
-        elif self.high_severity_count > 0:
-            return "High"
-        elif self.medium_severity_count > 0:
-            return "Medium"
-        elif self.low_severity_count > 0:
-            return "Low"
-        else:
-            return "Safe"
 
 
 class Vulnerability(models.Model):
